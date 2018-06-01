@@ -1,0 +1,19 @@
+{
+  // Usare IntelliSense per informazioni sui possibili attributi.
+  // Al passaggio del mouse vengono visualizzate le descrizioni degli attributi esistenti.
+  // Per ulteriori informazioni, visitare: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": ".NET Core Launch (console)",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceRoot}/bin/Debug/netcoreapp2.0/LunaCompiler.dll",
+      "args": ["doc/hello_world.lu"],
+      "cwd": "${workspaceRoot}",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    }
+  ]
+}

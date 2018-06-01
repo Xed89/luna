@@ -1,0 +1,2 @@
+fun main(): int
+  console.writeLine("Hello World!")
