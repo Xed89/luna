@@ -1,15 +1,21 @@
 Parsing completed
 Syntax Tree:
-Function 'main'
-  type:
-    Type 'int'
-  statements:
-    [0]: 
-      Statement
-        MemberAccessExpression
-          [0]: 
-            VariableOrCall 'console'
-          [1]: 
-            VariableOrCall 'writeLine'
+TypeDeclaration 'HelloWorld'
+  [0]: 
+    Function 'main'
+      type:
+        Type 'int'
+      statements:
+        [0]: 
+          Statement
+            MemberAccessExpression
               [0]: 
-                Expression 'Hello World!'
+                VariableOrCall 'console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    Expression 'Hello World!'
+Compiled module:
+Module hello_world
+  Type HelloWorld
+    Function main(): int

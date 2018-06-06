@@ -14,7 +14,7 @@ namespace LunaCompiler
     {
       this.input = input;
       isAtLineStart = false;
-      keywords = new HashSet<string>() {"fun"};
+      keywords = new HashSet<string>() {"fun", "type"};
     }
 
     public bool TryGetNextToken(Token token)

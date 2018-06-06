@@ -6,9 +6,11 @@ namespace LunaCompiler
 {
   class SyntaxTree
   {
+    public readonly String moduleName;
     public readonly List<SyntaxNode> nodes;
-    public SyntaxTree(List<SyntaxNode> nodes)
+    public SyntaxTree(String moduleName, List<SyntaxNode> nodes)
     {
+      this.moduleName = moduleName;
       this.nodes = nodes;
     }
 
@@ -31,21 +33,48 @@ namespace LunaCompiler
     public abstract void WriteTree(IndentedTextWriter writer);
   }
 
+  class TypeDeclarationSyntax: SyntaxNode
+  {
+    public readonly Token nameToken;
+    public readonly IReadOnlyList<FunctionSyntax> functions;
+    public TypeDeclarationSyntax(Token nameToken, IReadOnlyList<FunctionSyntax> functions)
+    {
+      this.nameToken = nameToken;
+      this.functions = functions;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine($"TypeDeclaration '{nameToken.value}'");
+      writer.Indent += 1;
+
+      for(var i=0; i<functions.Count; i++)
+      {
+        writer.WriteLine($"[{i}]: ");
+        writer.Indent += 1;
+        functions[i].WriteTree(writer);
+        writer.Indent -= 1;
+      }
+
+      writer.Indent -= 1;
+    }
+  }
+
   class FunctionSyntax: SyntaxNode
   {
-    public readonly Token identifierToken;
+    public readonly Token nameToken;
     public readonly TypeSyntax typeSyntax;
     public readonly List<StatementSyntax> statementSyntaxes;
     public FunctionSyntax(Token identifierToken, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
     {
-      this.identifierToken = identifierToken;
+      this.nameToken = identifierToken;
       this.typeSyntax = typeSyntax;
       this.statementSyntaxes = statementSyntaxes;
     }
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      writer.WriteLine($"Function '{identifierToken.value}'");
+      writer.WriteLine($"Function '{nameToken.value}'");
       writer.Indent += 1;
       
       writer.WriteLine("type:");

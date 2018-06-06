@@ -5,9 +5,12 @@ namespace LunaCompiler
 {
   class Parser
   {
+    private readonly String moduleName;
     private readonly Tokenizer tokenizer;
-    public Parser(Tokenizer tokenizer)
+    public Parser(String moduleName, 
+                  Tokenizer tokenizer)
     {
+      this.moduleName = moduleName;
       this.tokenizer = tokenizer;
     }
 
@@ -53,9 +56,9 @@ namespace LunaCompiler
       while (nextToken != null)
       {
         //Console.WriteLine($"Token: {token.ToString()}");
-        if (AcceptKeyword("fun"))
+        if (AcceptKeyword("type"))
         {
-          nodes.Add(ParseFunction());
+          nodes.Add(ParseTypeDeclaration());
         }
         else
         {
@@ -63,7 +66,31 @@ namespace LunaCompiler
         }
       }
 
-      return new SyntaxTree(nodes);
+      return new SyntaxTree(moduleName, nodes);
+    }
+
+    private TypeDeclarationSyntax ParseTypeDeclaration()
+    {
+      Expect(TokenType.Identifier);
+      var nameToken = Current();
+      Expect(TokenType.NewLine);
+
+      NestingLevelIncrease();
+      var functions = new List<FunctionSyntax>();
+      // Now we have the function statements!
+      while (AcceptIndentation(nestingDepth))
+      {
+        if (AcceptKeyword("fun"))
+        {
+          functions.Add(ParseFunction());
+        }
+        else
+        {
+          throw new ArgumentException($"Unexpected token {nextToken.ToString()}");
+        }
+      }
+
+      return new TypeDeclarationSyntax(nameToken, functions);
     }
 
     private FunctionSyntax ParseFunction()

@@ -12,7 +12,7 @@ namespace LunaCompiler
     public void RunTests()
     {
       stopWatch = new Stopwatch();
-      Console.WriteLine($"Stopwatch: {Stopwatch.IsHighResolution}");
+      
       var testSourceFiles = CollectTestSourceFiles();
       foreach (var testSourceFile in testSourceFiles)
       {
@@ -44,10 +44,13 @@ namespace LunaCompiler
       using (var reader = new System.IO.StreamReader(System.IO.File.OpenRead(testSourceFile)))
       {
         stopWatch.Start();
+        var fileName = System.IO.Path.GetFileNameWithoutExtension(testSourceFile);
         var tokenizer = new Tokenizer(reader);
-        var parser = new Parser(tokenizer);
+        var parser = new Parser(fileName, tokenizer);
 
         var syntaxTree = parser.Parse();
+        var compiler = new Compiler(syntaxTree);
+        var module = compiler.Compile();
         stopWatch.Stop();
 
         using (var streamWriter = new StreamWriter(outputFile))
@@ -57,6 +60,8 @@ namespace LunaCompiler
             writer.WriteLine("Parsing completed");
             writer.WriteLine("Syntax Tree:");
             syntaxTree.WriteTree(writer);
+            writer.WriteLine("Compiled module:");
+            module.Write(writer);
           }
         }
       }
