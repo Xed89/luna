@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace LunaCompiler
@@ -7,11 +8,13 @@ namespace LunaCompiler
   {
     private readonly TextReader input;
     private bool isAtLineStart;
+    private readonly HashSet<String> keywords;
 
     public Tokenizer(TextReader input)
     {
       this.input = input;
       isAtLineStart = false;
+      keywords = new HashSet<string>() {"fun"};
     }
 
     public bool TryGetNextToken(Token token)
@@ -121,7 +124,7 @@ namespace LunaCompiler
             {
               // We reached identifier end, stop here
               acceptChar = TokenizerInputCharAccept.TokenComplete;
-              tokenType = TokenType.Identifier;
+              tokenType = keywords.Contains(accumulator) ? TokenType.Keyword: TokenType.Identifier;
             }
             break;
 
@@ -214,60 +217,25 @@ namespace LunaCompiler
       // TODO
       return false;
     }
-  }
 
-  public enum TokenizerState
-  {
-    Begin,
-    Identifier,
-    Number,
-    String,
-    NewLineCR,
-    Indentation
-  }
-
-  public enum TokenizerInputCharAccept
-  {
-    Unexpected,
-    Accumulate,
-    AccumulateAndTokenComplete,
-    Discard,
-    DiscardAndTokenComplete,
-    TokenComplete
-  }
-
-  public enum TokenType
-  {
-    Unknown,
-    Keyword,
-    Identifier,
-    Number,
-    String,
-    OpenRoundParenthesis,
-    CloseRoundParenthesis,
-    Colon,
-    Dot,
-    NewLine,
-    Indentation
-  }
-
-  class Token
-  {
-    public TokenType type;
-    public string value;
-
-    public void Set(TokenType type, String value)
+    private enum TokenizerState
     {
-      this.type = type;
-      this.value = value;
+      Begin,
+      Identifier,
+      Number,
+      String,
+      NewLineCR,
+      Indentation
     }
 
-    public override string ToString()
+    private enum TokenizerInputCharAccept
     {
-      var printValue = (type == TokenType.NewLine || type == TokenType.NewLine) ?
-                         value.Replace("\r", "\\r").Replace("\n", "\\n") :
-                         value;
-      return $"type: {type}, value: '{printValue}'";
+      Unexpected,
+      Accumulate,
+      AccumulateAndTokenComplete,
+      Discard,
+      DiscardAndTokenComplete,
+      TokenComplete
     }
   }
 }

@@ -3,15 +3,24 @@
 namespace LunaCompiler {
   class Program {
     static void Main(string[] args) {
-      Console.WriteLine("Hello World!");
+      if (args.Length == 0)
+      {
+        Console.WriteLine("Hi :)");
+        return;
+      }
+
+      if (args[0] == "-runtests")
+      {
+        var runner = new TestRunner();
+        runner.RunTests();
+        return;
+      }
 
       using (var reader = new System.IO.StreamReader(System.IO.File.OpenRead(args[0]))) {
         var tokenizer = new Tokenizer(reader);
+        var parser = new Parser(tokenizer);
 
-        var token = new Token();
-        while (tokenizer.TryGetNextToken(token)) {
-          Console.WriteLine($"Token: {token.ToString()}");
-        }
+        var ast = parser.Parse();
       }
     }
   }

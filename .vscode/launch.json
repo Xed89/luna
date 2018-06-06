@@ -5,12 +5,23 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": ".NET Core Launch (console)",
+      "name": "Launch console",
       "type": "coreclr",
       "request": "launch",
       "preLaunchTask": "build",
       "program": "${workspaceRoot}/bin/Debug/netcoreapp2.0/LunaCompiler.dll",
       "args": ["doc/hello_world.lu"],
+      "cwd": "${workspaceRoot}",
+      "stopAtEntry": false,
+      "console": "internalConsole"
+    },
+    {
+      "name": "Run Tests",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceRoot}/bin/Debug/netcoreapp2.0/LunaCompiler.dll",
+      "args": ["-runtests"],
       "cwd": "${workspaceRoot}",
       "stopAtEntry": false,
       "console": "internalConsole"
