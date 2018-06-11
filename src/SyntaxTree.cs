@@ -16,7 +16,7 @@ namespace LunaCompiler
 
     public void WriteTree(IndentedTextWriter writer)
     {
-      foreach(var node in nodes)
+      foreach (var node in nodes)
       {
         node.WriteTree(writer);
       }
@@ -27,13 +27,13 @@ namespace LunaCompiler
   {
     public SyntaxNode()
     {
-      
+
     }
 
     public abstract void WriteTree(IndentedTextWriter writer);
   }
 
-  class TypeDeclarationSyntax: SyntaxNode
+  class TypeDeclarationSyntax : SyntaxNode
   {
     public readonly Token nameToken;
     public readonly IReadOnlyList<FunctionSyntax> functions;
@@ -48,7 +48,7 @@ namespace LunaCompiler
       writer.WriteLine($"TypeDeclaration '{nameToken.value}'");
       writer.Indent += 1;
 
-      for(var i=0; i<functions.Count; i++)
+      for (var i = 0; i < functions.Count; i++)
       {
         writer.WriteLine($"[{i}]: ");
         writer.Indent += 1;
@@ -60,7 +60,7 @@ namespace LunaCompiler
     }
   }
 
-  class FunctionSyntax: SyntaxNode
+  class FunctionSyntax : SyntaxNode
   {
     public readonly Token nameToken;
     public readonly TypeSyntax typeSyntax;
@@ -76,7 +76,7 @@ namespace LunaCompiler
     {
       writer.WriteLine($"Function '{nameToken.value}'");
       writer.Indent += 1;
-      
+
       writer.WriteLine("type:");
       writer.Indent += 1;
       if (typeSyntax != null)
@@ -86,7 +86,7 @@ namespace LunaCompiler
       writer.Indent -= 1;
 
       writer.WriteLine("statements:");
-      for(var i=0; i<statementSyntaxes.Count; i++)
+      for (var i = 0; i < statementSyntaxes.Count; i++)
       {
         writer.Indent += 1;
         writer.WriteLine($"[{i}]: ");
@@ -100,7 +100,7 @@ namespace LunaCompiler
     }
   }
 
-  class VariableOrCallSyntax: SyntaxNode
+  class VariableOrCallSyntax : SyntaxNode
   {
     public readonly Token identifierToken;
     public readonly List<ExpressionSyntax> argumentExpressionSyntaxes;
@@ -115,19 +115,23 @@ namespace LunaCompiler
       writer.WriteLine($"VariableOrCall '{identifierToken.value}'");
       writer.Indent += 1;
 
-      for(var i=0; i<argumentExpressionSyntaxes.Count; i++)
+      // If it's not null we have a call
+      if (argumentExpressionSyntaxes != null)
       {
-        writer.WriteLine($"[{i}]: ");
-        writer.Indent += 1;
-        argumentExpressionSyntaxes[i].WriteTree(writer);
-        writer.Indent -= 1;
+        for (var i = 0; i < argumentExpressionSyntaxes.Count; i++)
+        {
+          writer.WriteLine($"[{i}]: ");
+          writer.Indent += 1;
+          argumentExpressionSyntaxes[i].WriteTree(writer);
+          writer.Indent -= 1;
+        }
       }
 
       writer.Indent -= 1;
     }
   }
 
-  class MemberAccessExpressionSyntax: SyntaxNode
+  class MemberAccessExpressionSyntax : SyntaxNode
   {
     public readonly List<VariableOrCallSyntax> variableOrCallSyntaxes;
     public MemberAccessExpressionSyntax(List<VariableOrCallSyntax> variableOrCallSyntaxes)
@@ -140,7 +144,7 @@ namespace LunaCompiler
       writer.WriteLine($"MemberAccessExpression");
       writer.Indent += 1;
 
-      for(var i=0; i<variableOrCallSyntaxes.Count; i++)
+      for (var i = 0; i < variableOrCallSyntaxes.Count; i++)
       {
         writer.WriteLine($"[{i}]: ");
         writer.Indent += 1;
@@ -152,7 +156,7 @@ namespace LunaCompiler
     }
   }
 
-  class StatementSyntax: SyntaxNode
+  class StatementSyntax : SyntaxNode
   {
     public readonly MemberAccessExpressionSyntax memberAccessExpressionSyntax;
     public StatementSyntax(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
@@ -171,7 +175,7 @@ namespace LunaCompiler
     }
   }
 
-  class ExpressionSyntax: SyntaxNode
+  class ExpressionSyntax : SyntaxNode
   {
     public readonly Token literal;
     public ExpressionSyntax(Token literal)
@@ -185,7 +189,7 @@ namespace LunaCompiler
     }
   }
 
-  class TypeSyntax: SyntaxNode
+  class TypeSyntax : SyntaxNode
   {
     public readonly Token typeToken;
     public TypeSyntax(Token typeToken)

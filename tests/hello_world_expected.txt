@@ -4,18 +4,43 @@ TypeDeclaration 'HelloWorld'
   [0]: 
     Function 'main'
       type:
-        Type 'int'
+        null
       statements:
         [0]: 
           Statement
             MemberAccessExpression
               [0]: 
-                VariableOrCall 'console'
+                VariableOrCall 'Console'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
                     Expression 'Hello World!'
+
 Compiled module:
 Module hello_world
   Type HelloWorld
-    Function main(): int
+    Function main()
+      LunaCompiler.Statement
+  String constants
+
+Generated Cpp code:
+#include "stdio.h"
+class Console {
+public:
+  static void writeLine(const char* msg) {
+    printf(msg);
+  }
+};
+
+class HelloWorld {
+public:
+  static void main() {
+    Console::writeLine("Hello World!");
+  }
+};
+int main() {
+  HelloWorld::main();
+}
+
+Program output:
+Hello World!

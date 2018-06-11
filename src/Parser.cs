@@ -144,11 +144,13 @@ namespace LunaCompiler
     {
       Expect(TokenType.Identifier);
       var identifier = Current();
-      var argumentExpressionSyntaxes = new List<ExpressionSyntax>();
+      List<ExpressionSyntax> argumentExpressionSyntaxes = null;
       if (Accept(TokenType.OpenRoundParenthesis))
       {
         // Loop until we find a close parenthesis
         var isFirstArg = true;
+        argumentExpressionSyntaxes = new List<ExpressionSyntax>();
+        
         while (!Accept(TokenType.CloseRoundParenthesis))
         {
           /* TODO
