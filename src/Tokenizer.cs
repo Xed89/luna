@@ -14,7 +14,7 @@ namespace LunaCompiler
     {
       this.input = input;
       isAtLineStart = false;
-      keywords = new HashSet<string>() {"fun", "type"};
+      keywords = new HashSet<string>() {"fun", "type", "static", "let", "var"};
     }
 
     public bool TryGetNextToken(Token token)
@@ -40,6 +40,12 @@ namespace LunaCompiler
             {
               acceptChar = TokenizerInputCharAccept.Accumulate;
               state = TokenizerState.Identifier;
+
+            } 
+            else if (Char.IsDigit(readChar))
+            {
+              acceptChar = TokenizerInputCharAccept.Accumulate;
+              state = TokenizerState.Number;
 
             }
             else if (readChar == '\r')
@@ -88,6 +94,18 @@ namespace LunaCompiler
               tokenType = TokenType.Colon;
 
             }
+            else if (readChar == '=')
+            {
+              acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
+              tokenType = TokenType.Equals;
+
+            }
+            else if (readChar == ',')
+            {
+              acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
+              tokenType = TokenType.Comma;
+
+            }
             else if (readChar == '.')
             {
               acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
@@ -125,6 +143,21 @@ namespace LunaCompiler
               // We reached identifier end, stop here
               acceptChar = TokenizerInputCharAccept.TokenComplete;
               tokenType = keywords.Contains(accumulator) ? TokenType.Keyword: TokenType.Identifier;
+            }
+            break;
+
+          case TokenizerState.Number:
+            if (Char.IsDigit(readChar))
+            {
+              //Keep going!
+              acceptChar = TokenizerInputCharAccept.Accumulate;
+            }
+            else
+            {
+              // TODO Handle decimals
+              // TODO Handle type suffix
+              acceptChar = TokenizerInputCharAccept.TokenComplete;
+              tokenType = TokenType.Number;
             }
             break;
 

@@ -7,28 +7,33 @@ TypeDeclaration 'HelloWorld'
         null
       statements:
         [0]: 
-          Statement
-            MemberAccessExpression
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
               [0]: 
                 VariableOrCall 'Console'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    Expression 'Hello World!'
+                    ExpressionSyntax 'Hello World!'
 
 Compiled module:
 Module hello_world
   Type HelloWorld
     Function main()
-      LunaCompiler.Statement
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
   String constants
 
 Generated Cpp code:
 #include "stdio.h"
+#include "stdarg.h"
 class Console {
 public:
-  static void writeLine(const char* msg) {
-    printf(msg);
+  static void writeLine(const char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vfprintf(stdout, msg, argp);
+    fprintf(stdout, "\n");
+    va_end(argp);
   }
 };
 

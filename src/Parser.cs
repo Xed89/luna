@@ -25,6 +25,10 @@ namespace LunaCompiler
         nextToken = null;
       }
     }
+    private bool HasNextToken()
+    {
+      return nextToken != null;
+    }
     private Token Current()
     {
       var t = new Token();
@@ -96,6 +100,7 @@ namespace LunaCompiler
     private FunctionSyntax ParseFunction()
     {
       var funToken = Current();
+      var isStatic = AcceptKeyword("static");
       Expect(TokenType.Identifier);
       var identifierToken = Current();
       Expect(TokenType.OpenRoundParenthesis);
@@ -117,30 +122,70 @@ namespace LunaCompiler
       while (AcceptIndentation(nestingDepth))
       {
         statements.Add(ParseStatement());
+        if (HasNextToken())
+        {
+          // All statements end with a newline, if the file is not ended
+          Expect(TokenType.NewLine);
+        }
       }
 
-      return new FunctionSyntax(identifierToken, typeSyntax, statements);
+      return new FunctionSyntax(isStatic, identifierToken, typeSyntax, statements);
     }
 
     private StatementSyntax ParseStatement()
     {
-      var memberAccessExpression = ParseMemberAccessExpression();
-      //TODO Handle assign
-      return new StatementSyntax(memberAccessExpression);
+      if (AcceptKeyword("let"))
+      {
+        return ParseDeclarationStatement(isVar: false);
+      }
+      else if (AcceptKeyword("var"))
+      {
+        return ParseDeclarationStatement(isVar: true);
+      }
+      else 
+      {
+        return ParseVarOrCallChainMaybeAssignStatement();
+      }
     }
 
-    private MemberAccessExpressionSyntax ParseMemberAccessExpression()
+    private VarOrCallChainMaybeAssignStatementSyntax ParseVarOrCallChainMaybeAssignStatement()
     {
-      var variableOrCallSyntaxes = new List<VariableOrCallSyntax>();
-      variableOrCallSyntaxes.Add(ParseVariableOrCall());
+      var varOrCallChain = ParseVarOrCallChain();
+      //TODO Handle assign
+      ExpressionSyntax valueToAssignExpression = null;
+
+      if (Accept(TokenType.Equals))
+      {
+        valueToAssignExpression = ParseExpression();
+      }
+
+      return new VarOrCallChainMaybeAssignStatementSyntax(varOrCallChain, valueToAssignExpression);
+    }
+
+    private DeclarationStatementSyntax ParseDeclarationStatement(bool isVar)
+    {
+      Expect(TokenType.Identifier);
+      var identifierToken = Current();
+      ExpressionSyntax initializer = null;
+      if (Accept(TokenType.Equals))
+      {
+        initializer = ParseExpression();
+      }
+      return new DeclarationStatementSyntax(isVar, identifierToken, initializer);
+    }
+
+    private VarOrCallChainSyntax ParseVarOrCallChain()
+    {
+      var varOrCallSyntaxes = new List<VarOrCallSyntax>();
+      varOrCallSyntaxes.Add(ParseVarOrCall());
       while (Accept(TokenType.Dot))
       {
-        variableOrCallSyntaxes.Add(ParseVariableOrCall());
+        varOrCallSyntaxes.Add(ParseVarOrCall());
       }
-      return new MemberAccessExpressionSyntax(variableOrCallSyntaxes);
+      return new VarOrCallChainSyntax(varOrCallSyntaxes);
     }
 
-    private VariableOrCallSyntax ParseVariableOrCall()
+    private VarOrCallSyntax ParseVarOrCall()
     {
       Expect(TokenType.Identifier);
       var identifier = Current();
@@ -153,26 +198,41 @@ namespace LunaCompiler
         
         while (!Accept(TokenType.CloseRoundParenthesis))
         {
-          /* TODO
           if (!isFirstArg)
           {
-            Expect(TokenType.Comma)
+            Expect(TokenType.Comma);
           }
-          */
           isFirstArg = false;
           argumentExpressionSyntaxes.Add(ParseExpression());
         }
       }
       
-      return new VariableOrCallSyntax(identifier, argumentExpressionSyntaxes);
+      return new VarOrCallSyntax(identifier, argumentExpressionSyntaxes);
     }
 
     private ExpressionSyntax ParseExpression()
     {
-      Expect(TokenType.String);
-      var literal = Current();
-      //TODO Numbers and memberAccessExpression
-      return new ExpressionSyntax(literal);
+      if (Accept(TokenType.String))
+      {
+        var literal = Current();
+        return new ExpressionSyntax(literal);
+      }
+      else if (Accept(TokenType.Number))
+      {
+        var literal = Current();
+        return new ExpressionSyntax(literal);
+      }
+      else if (Accept(TokenType.Identifier))
+      {
+        //TODO memberAccessExpression
+        var literal = Current();
+        return new ExpressionSyntax(literal);
+      }
+      else
+      {
+        throw new ArgumentException("Invalid expression");
+      }
+      //TODO handle expression type
     }
 
     private bool AcceptIndentation(int nestingDepth)

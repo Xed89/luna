@@ -18,10 +18,15 @@ namespace LunaCompiler
     public void Generate()
     {
       writer.WriteLine($"#include \"stdio.h\"");
+      writer.WriteLine($"#include \"stdarg.h\"");
       writer.WriteLine($"class Console {{");
       writer.WriteLine($"public:");
-      writer.WriteLine($"  static void writeLine(const char* msg) {{");
-      writer.WriteLine($"    printf(msg);");
+      writer.WriteLine($"  static void writeLine(const char* msg, ...) {{");
+      writer.WriteLine($"    va_list argp;");
+      writer.WriteLine($"    va_start(argp, msg);");
+      writer.WriteLine($"    vfprintf(stdout, msg, argp);");
+      writer.WriteLine($"    fprintf(stdout, \"\\n\");");
+      writer.WriteLine($"    va_end(argp);");
       writer.WriteLine($"  }}");
       writer.WriteLine($"}};");
       writer.WriteLine($"");
@@ -62,18 +67,66 @@ namespace LunaCompiler
     
       foreach(var statement in function.statements)
       {
-        var memberAccess = statement.memberAccess;
-        foreach(var varOrCall in memberAccess.variableOrCalls)
+        if (statement.GetType() == typeof(VarOrCallChainMaybeAssignStatement))
         {
-          //Assume static function for now
-          var funToCall = (Function)varOrCall.symbolToAccessOrCall;
-          writer.Write($"{funToCall.type.name}::{funToCall.name}(");
-          foreach(var argExpr in varOrCall.argumentExpressions)
+          var varOrCallChainMaybeAssignStatement = (VarOrCallChainMaybeAssignStatement)statement;
+          var varOrCallChain = varOrCallChainMaybeAssignStatement.varOrCallChain;
+          foreach(var varOrCall in varOrCallChain.varOrCalls)
+          {
+            if (varOrCall.symbolToAccessOrCall.GetType() == typeof(Function))
+            {
+              var funToCall = (Function)varOrCall.symbolToAccessOrCall;
+              writer.Write($"{funToCall.type.name}::{funToCall.name}(");
+              var isFirstArg = true;
+              foreach(var argExpr in varOrCall.argumentExpressions)
+              {
+                if (!isFirstArg)
+                {
+                  writer.Write(", ");
+                }
+                isFirstArg = false;
+                //Assume literal for now
+                if (argExpr.type.name == "string")
+                {
+                  writer.Write($"\"{argExpr.literal.value}\"");
+                }
+                else
+                {
+                  writer.Write(argExpr.literal.value);
+                }
+              }
+              writer.Write($")");
+            }
+            else if (varOrCall.symbolToAccessOrCall.GetType() == typeof(DeclarationStatement))
+            {
+              var declarationStatement = (DeclarationStatement)varOrCall.symbolToAccessOrCall;
+              writer.Write($"{declarationStatement.name}");
+            } 
+            else
+            {
+              throw new ArgumentException($"Unknown symbol type: {varOrCall.symbolToAccessOrCall.GetType().Name}");
+            }
+          }
+
+          if (varOrCallChainMaybeAssignStatement.valueToAssignExpression != null)
+          {
+            writer.Write($" = {varOrCallChainMaybeAssignStatement.valueToAssignExpression.literal.value}");
+          }
+        } 
+        else if (statement.GetType() == typeof(DeclarationStatement))
+        {
+          var declarationStatement = (DeclarationStatement)statement;
+          // isVar is ignored because the read-only behavior of let is guaranted by the luna compiler checks
+          writer.Write($"{declarationStatement.type.name} {declarationStatement.name}");
+          if (declarationStatement.initializer != null)
           {
             //Assume string literal for now
-            writer.Write($"\"{argExpr.literal.value}\"");
+            writer.Write($" = {declarationStatement.initializer.literal.value}");
           }
-          writer.Write($")");
+        }
+        else
+        {
+          throw new ArgumentException($"Unknown statement type: {statement.GetType().Name}");
         }
         writer.WriteLine($";");
       }

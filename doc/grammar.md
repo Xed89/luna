@@ -13,14 +13,18 @@ topLevelSyntax := variableDeclaration | functionDeclaration
 
 variableDeclaration := 'var' identifier ['=' expression] newline
 
-functionDeclaration := 'fun' identifier '(' ')' [':' type] newline {statement}
+functionDeclaration := 'fun' ['static'] identifier '(' ')' [':' type] newline {statement}
 
-statement := memberAccessExpression ['=' expression]
+statement := declarationStatement | varOrCallChainMaybeAssignStatement
+declarationStatement := ('let' | 'var') identifier [':' type] ['=' expression]
+varOrCallChainMaybeAssignStatement := varOrCallChain ['=' expression]
 
-memberAccessExpression := variableOrCall {'.' variableOrCall}
-variableOrCall := identifier ['(' [expression {, expression}] ')']
+varOrCallChain := varOrCall {'.' varOrCall}
+varOrCall := identifier ['(' [expression {, expression}] ')']
 
 expression := number | string | memberAccessExpression
+
+type := identifier
 
 identifier := ? identifier token ?
 number := ? number token ?

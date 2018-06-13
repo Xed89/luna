@@ -15,7 +15,9 @@ namespace LunaCompiler
     Colon,
     Dot,
     NewLine,
-    Indentation
+    Indentation,
+    Equals,
+    Comma
   }
 
   class Token

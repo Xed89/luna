@@ -62,11 +62,13 @@ namespace LunaCompiler
 
   class FunctionSyntax : SyntaxNode
   {
+    public readonly bool isStatic;
     public readonly Token nameToken;
     public readonly TypeSyntax typeSyntax;
     public readonly List<StatementSyntax> statementSyntaxes;
-    public FunctionSyntax(Token identifierToken, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
+    public FunctionSyntax(bool isStatic, Token identifierToken, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
     {
+      this.isStatic = isStatic;
       this.nameToken = identifierToken;
       this.typeSyntax = typeSyntax;
       this.statementSyntaxes = statementSyntaxes;
@@ -74,7 +76,8 @@ namespace LunaCompiler
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      writer.WriteLine($"Function '{nameToken.value}'");
+      var staticKeyword = isStatic ? " (static)": "";
+      writer.WriteLine($"Function '{nameToken.value}'{staticKeyword}");
       writer.Indent += 1;
 
       writer.WriteLine("type:");
@@ -100,11 +103,11 @@ namespace LunaCompiler
     }
   }
 
-  class VariableOrCallSyntax : SyntaxNode
+  class VarOrCallSyntax : SyntaxNode
   {
     public readonly Token identifierToken;
     public readonly List<ExpressionSyntax> argumentExpressionSyntaxes;
-    public VariableOrCallSyntax(Token identifierToken, List<ExpressionSyntax> argumentExpressionSyntaxes)
+    public VarOrCallSyntax(Token identifierToken, List<ExpressionSyntax> argumentExpressionSyntaxes)
     {
       this.identifierToken = identifierToken;
       this.argumentExpressionSyntaxes = argumentExpressionSyntaxes;
@@ -131,17 +134,17 @@ namespace LunaCompiler
     }
   }
 
-  class MemberAccessExpressionSyntax : SyntaxNode
+  class VarOrCallChainSyntax : SyntaxNode
   {
-    public readonly List<VariableOrCallSyntax> variableOrCallSyntaxes;
-    public MemberAccessExpressionSyntax(List<VariableOrCallSyntax> variableOrCallSyntaxes)
+    public readonly List<VarOrCallSyntax> variableOrCallSyntaxes;
+    public VarOrCallChainSyntax(List<VarOrCallSyntax> variableOrCallSyntaxes)
     {
       this.variableOrCallSyntaxes = variableOrCallSyntaxes;
     }
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      writer.WriteLine($"MemberAccessExpression");
+      writer.WriteLine(GetType().Name);
       writer.Indent += 1;
 
       for (var i = 0; i < variableOrCallSyntaxes.Count; i++)
@@ -156,20 +159,62 @@ namespace LunaCompiler
     }
   }
 
-  class StatementSyntax : SyntaxNode
+  abstract class StatementSyntax : SyntaxNode
   {
-    public readonly MemberAccessExpressionSyntax memberAccessExpressionSyntax;
-    public StatementSyntax(MemberAccessExpressionSyntax memberAccessExpressionSyntax)
+  }
+
+  class VarOrCallChainMaybeAssignStatementSyntax : StatementSyntax
+  {
+    public readonly VarOrCallChainSyntax varOrCallChainSyntax;
+    public readonly ExpressionSyntax valueToAssignExpression;
+    public VarOrCallChainMaybeAssignStatementSyntax(VarOrCallChainSyntax varOrCallChainSyntax, ExpressionSyntax valueToAssignExpression)
     {
-      this.memberAccessExpressionSyntax = memberAccessExpressionSyntax;
+      this.varOrCallChainSyntax = varOrCallChainSyntax;
+      this.valueToAssignExpression = valueToAssignExpression;
     }
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      writer.WriteLine($"Statement");
+      writer.WriteLine(GetType().Name);
       writer.Indent += 1;
 
-      memberAccessExpressionSyntax.WriteTree(writer);
+      varOrCallChainSyntax.WriteTree(writer);
+      if (valueToAssignExpression != null)
+      {
+        writer.Indent += 1;
+        valueToAssignExpression.WriteTree(writer);
+        writer.Indent -= 1;
+      }
+
+      writer.Indent -= 1;
+    }
+  }
+
+  class DeclarationStatementSyntax : StatementSyntax
+  {
+    public readonly bool isVar;
+    public readonly Token identifierToken;
+    public readonly ExpressionSyntax initializer;
+    public DeclarationStatementSyntax(bool isVar, Token identifierToken, ExpressionSyntax initializer)
+    {
+      this.isVar = isVar;
+      this.identifierToken = identifierToken;
+      this.initializer = initializer;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine(GetType().Name);
+      writer.Indent += 1;
+
+      var letOrVarStr = isVar ? "var" : "let";
+      writer.WriteLine($"{letOrVarStr} {identifierToken.value}");
+      if (initializer != null)
+      {
+        writer.Indent += 1;
+        initializer.WriteTree(writer);
+        writer.Indent -= 1;
+      }
 
       writer.Indent -= 1;
     }
@@ -185,7 +230,7 @@ namespace LunaCompiler
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      writer.WriteLine($"Expression '{literal.value}'");
+      writer.WriteLine($"{GetType().Name} '{literal.value}'");
     }
   }
 

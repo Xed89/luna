@@ -39,7 +39,7 @@ namespace LunaCompiler
     private ExternReference GetOrAddExternReference(String name)
     {
       int maxAddress = -1;
-      for(int i=0; i<externRefs.Count; i++)
+      for (int i = 0; i < externRefs.Count; i++)
       {
         if (externRefs[i].Name == name)
         {
@@ -65,8 +65,35 @@ namespace LunaCompiler
       return type;
     }
 
+    // Current scope data
+    private List<DeclarationStatement> localVariables;
+    private ISymbol FindIdentifier(Token identifier)
+    {
+      var result = FindIdentifierOrNull(identifier);
+      if (result != null)
+        return result;
+
+      throw new ArgumentException($"Could not find identifier {identifier.value}");
+    }
+
+    private ISymbol FindIdentifierOrNull(Token identifier)
+    {
+      // token is an identifier
+      foreach(var lv in localVariables)
+      {
+        if (lv.name == identifier.value)
+        {
+          return lv;
+        }
+      }
+
+      return null;
+    }
+
     private Function CompileFunction(Type type, FunctionSyntax functionSyntax)
     {
+      localVariables = new List<DeclarationStatement>();
+
       Type returnType = null;
       if (functionSyntax.typeSyntax != null)
       {
@@ -76,10 +103,22 @@ namespace LunaCompiler
       var statements = new List<Statement>();
       foreach (var statementSyntax in functionSyntax.statementSyntaxes)
       {
-        CompileFunctionStatement(statementSyntax, statements);
+        if (statementSyntax.GetType() == typeof(VarOrCallChainMaybeAssignStatementSyntax))
+        {
+          CompileFunctionStatement_VarOrCallChainMaybeAssignStatement((VarOrCallChainMaybeAssignStatementSyntax)statementSyntax, statements);
+        }
+        else if (statementSyntax.GetType() == typeof(DeclarationStatementSyntax))
+        {
+          CompileFunctionStatement_DeclarationStatement((DeclarationStatementSyntax)statementSyntax, statements);
+        }
+        else
+        {
+          throw new ArgumentException($"Unknown statement type: {statementSyntax.GetType().Name}");
+        }
       }
 
       return new Function(type,
+                          functionSyntax.isStatic,
                           functionSyntax.nameToken.value,
                           returnType,
                           statements);
@@ -89,15 +128,16 @@ namespace LunaCompiler
     {
       Start,
       TypeForStaticAccess,
-      CallDone
+      CallDone,
+      AccessDone
     }
 
-    private void CompileFunctionStatement(StatementSyntax statementSyntax, List<Statement> statements)
+    private void CompileFunctionStatement_VarOrCallChainMaybeAssignStatement(VarOrCallChainMaybeAssignStatementSyntax statementSyntax, List<Statement> statements)
     {
-      var variableOrCallSyntaxes = statementSyntax.memberAccessExpressionSyntax.variableOrCallSyntaxes;
+      var variableOrCallSyntaxes = statementSyntax.varOrCallChainSyntax.variableOrCallSyntaxes;
       var state = StatementCompileState.Start;
       Type typeForStaticAccess = null;
-      var variableOrCalls = new List<VariableOrCall>();
+      var variableOrCalls = new List<VarOrCall>();
       foreach (var variableOrCallSyntax in variableOrCallSyntaxes)
       {
         switch (state)
@@ -106,7 +146,7 @@ namespace LunaCompiler
             {
               // The first can either be a variable, a function or a type used to call a static method or to access a static variable
               // TODO local variables, function args, instance args or function either static or not
-              typeForStaticAccess = TryResolveTypeByName(variableOrCallSyntax.identifierToken);
+              typeForStaticAccess = TryResolveTypeByTokenValue(variableOrCallSyntax.identifierToken);
               if (typeForStaticAccess != null)
               {
                 // TODO Test this case
@@ -115,13 +155,23 @@ namespace LunaCompiler
 
                 // Ok go on, the next will be a static method or field
                 state = StatementCompileState.TypeForStaticAccess;
+                break;
               }
-              else
+
+              var identifier = FindIdentifierOrNull(variableOrCallSyntax.identifierToken);
+              if (identifier != null)
               {
-                throw new ArgumentException($"Could not resolve {variableOrCallSyntax.identifierToken.value}");
+                // TODO Test this case
+                if (variableOrCallSyntax.argumentExpressionSyntaxes != null)
+                  throw new ArgumentException($"{identifier.Name} is a type and can't be invoked as a function");
+
+                variableOrCalls.Add(new VarOrCall(identifier, null));
+                state = StatementCompileState.AccessDone;
+                break;
               }
+              
+              throw new ArgumentException($"Could not resolve {variableOrCallSyntax.identifierToken.value}");
             }
-            break;
 
           case StatementCompileState.TypeForStaticAccess:
             {
@@ -137,14 +187,11 @@ namespace LunaCompiler
 
                 // Evaluate the args
                 var argExprs = new List<Expression>();
-                foreach(var arg in variableOrCallSyntax.argumentExpressionSyntaxes)
+                foreach (var arg in variableOrCallSyntax.argumentExpressionSyntaxes)
                 {
-                  if (arg.literal.type != TokenType.String)
-                    throw new ArgumentException($"Argument type not supported");
-
-                  argExprs.Add(new Expression(arg.literal));
+                  argExprs.Add(CompileExpression(arg));
                 }
-                variableOrCalls.Add(new VariableOrCall(fun, argExprs));
+                variableOrCalls.Add(new VarOrCall(fun, argExprs));
 
                 state = StatementCompileState.CallDone;
               }
@@ -172,29 +219,97 @@ namespace LunaCompiler
 
         case StatementCompileState.CallDone:
           // The statemend ended with a call, it's valid.
-          statements.Add(new Statement(new MemberAccess(variableOrCalls)));
+          statements.Add(new VarOrCallChainMaybeAssignStatement(new VarOrCallChain(variableOrCalls), null));
+          break;
+
+        case StatementCompileState.AccessDone:
+          // The statement ended with a varible access, an assign is expected to form a valid statement
+          if (statementSyntax.valueToAssignExpression == null)
+          {
+            throw new ArgumentException($"Assign operator expected");
+          }
+          // The statemend ended with a call, it's valid.
+          var valueToAssignExpression = CompileExpression(statementSyntax.valueToAssignExpression);
+          // TODO Check the type assigned agains the variable type
+          statements.Add(new VarOrCallChainMaybeAssignStatement(new VarOrCallChain(variableOrCalls), valueToAssignExpression));
           break;
 
         default:
-          throw new ArgumentException($"Invalid statement compiler state: {state}");
+          throw new ArgumentException($"Invalid statement compiler final state: {state}");
       }
+    }
+
+    private void CompileFunctionStatement_DeclarationStatement(DeclarationStatementSyntax declarationStatement, List<Statement> statements)
+    {
+      Expression initializer = null;
+      Type type = null;
+      if (declarationStatement.initializer != null)
+      {
+        initializer = CompileExpression(declarationStatement.initializer);
+        type = initializer.type;
+      }
+      else
+      {
+        throw new ArgumentException("Could not determine type for variable");
+      }
+
+      // TODO Check duplicate variables
+
+      var ds = new DeclarationStatement(declarationStatement.isVar,
+                                        type,
+                                        declarationStatement.identifierToken.value,
+                                        initializer);
+      localVariables.Add(ds);
+      statements.Add(ds);
+    }
+
+    private Expression CompileExpression(ExpressionSyntax expressionSyntax)
+    {
+      Type type = null;
+      if (expressionSyntax.literal.type == TokenType.String)
+      {
+        type = TryResolveTypeByName("string");
+      }
+      else if (expressionSyntax.literal.type == TokenType.Number)
+      {
+        // TODO Decimal types
+        type = TryResolveTypeByName("int");
+      }
+      else if (expressionSyntax.literal.type == TokenType.Identifier)
+      {
+        // Find the identifier, it can be a local variable, a function argument, a global, ecc..
+        type = FindIdentifier(expressionSyntax.literal).Type;
+      }
+
+      if (type == null)
+      {
+        throw new ArgumentException($"Could not determine type of expression");
+      }
+
+      return new Expression(expressionSyntax.literal, type);
     }
 
     private void PrintInstruction(short instr)
     {
-      Console.Write($"\\x{instr&0xff:x}\\x{(instr>>8)&0xff:x}");
+      Console.Write($"\\x{instr & 0xff:x}\\x{(instr >> 8) & 0xff:x}");
     }
 
-    private Type TryResolveTypeByName(Token nameToken)
+    private Type TryResolveTypeByTokenValue(Token nameToken)
+    {
+      return TryResolveTypeByName(nameToken.value);
+    }
+
+    private Type TryResolveTypeByName(String name)
     {
       // Try with built-in types
-      switch (nameToken.value)
+      switch (name)
       {
-        case "int": return new Type(nameToken.value);
+        case "int": return new Type(name);
+        case "string": return new Type(name);
         case "Console":
           {
-            var type = new Type(nameToken.value);
-            type.AddFunction(new Function(type, "writeLine", null, null));
+            var type = new Type(name);
+            type.AddFunction(new Function(type, true, "writeLine", null, null));
             return type;
           }
       }
@@ -204,7 +319,7 @@ namespace LunaCompiler
 
     private Type ResolveType(TypeSyntax typeSyntax)
     {
-      var type = TryResolveTypeByName(typeSyntax.typeToken);
+      var type = TryResolveTypeByTokenValue(typeSyntax.typeToken);
       if (type != null)
         return type;
 

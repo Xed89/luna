@@ -1,0 +1,7 @@
+type Program
+  fun static main()
+    let number1 = 57
+    var number2 = 82
+    Console.writeLine("Before assign, number1: %i, number2: %i", number1, number2)
+    number2 = 93
+    Console.writeLine("After assign, number1: %i, number2: %i", number1, number2)

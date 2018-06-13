@@ -28,6 +28,8 @@ namespace LunaCompiler
         var actualOutputFile = System.IO.Path.Combine(outputPath, testName + "_actual.txt");
         var expectedOutputFile = System.IO.Path.Combine(outputPath, testName + "_expected.txt");
 
+        // Delete the actual output file from the previous run
+        System.IO.File.Delete(actualOutputFile);
 
         try
         {
@@ -35,7 +37,7 @@ namespace LunaCompiler
         }
         catch (Exception ex)
         {
-          System.IO.File.WriteAllText(actualOutputFile, ex.ToString());
+          System.IO.File.AppendAllText(actualOutputFile, ex.ToString());
         }
 
         var durationMillisec = stopWatch.Elapsed.TotalMilliseconds;
@@ -55,8 +57,32 @@ namespace LunaCompiler
         var parser = new Parser(fileName, tokenizer);
 
         var syntaxTree = parser.Parse();
+
+        // Write parser output
+        using (var sw = new StreamWriter(outputFile, append: true))
+        {
+          using (var writer = new IndentedTextWriter(sw, "  "))
+          {
+            writer.WriteLine("Parsing completed");
+            writer.WriteLine("Syntax Tree:");
+            syntaxTree.WriteTree(writer);
+            writer.WriteLine("");
+          }
+        }
+
         var compiler = new Compiler(syntaxTree);
         var module = compiler.Compile();
+
+        // Write compiler output
+        using (var sw = new StreamWriter(outputFile, append: true))
+        {
+          using (var writer = new IndentedTextWriter(sw, "  "))
+          {
+            writer.WriteLine("Compiled module:");
+            module.Write(writer);
+            writer.WriteLine("");
+          }
+        }
 
         string cppCode;
         using (var sw = new StringWriter())
@@ -68,23 +94,14 @@ namespace LunaCompiler
             cppCode = sw.ToString();
           }
         }
-        string programOutput = CompileAndRunCppCodeReturnOutput(cppCode);
 
         // Save the code to a file, compile it and run
-
-        stopWatch.Stop();
-
-        using (var streamWriter = new StreamWriter(outputFile))
+        string programOutput = CompileAndRunCppCodeReturnOutput(cppCode);
+        // Write code and run output
+        using (var streamWriter = new StreamWriter(outputFile, append: true))
         {
           using (var writer = new IndentedTextWriter(streamWriter, "  "))
           {
-            writer.WriteLine("Parsing completed");
-            writer.WriteLine("Syntax Tree:");
-            syntaxTree.WriteTree(writer);
-            writer.WriteLine("");
-            writer.WriteLine("Compiled module:");
-            module.Write(writer);
-            writer.WriteLine("");
             writer.WriteLine("Generated Cpp code:");
             writer.Write(cppCode);
             writer.WriteLine("");
@@ -92,6 +109,8 @@ namespace LunaCompiler
             writer.Write(programOutput);
           }
         }
+
+        stopWatch.Stop();
       }
     }
 

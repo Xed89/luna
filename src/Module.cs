@@ -53,7 +53,8 @@ namespace LunaCompiler
 
   interface ISymbol
   {
-
+    String Name { get; }
+    Type Type { get; }
   }
 
   class Type
@@ -96,16 +97,21 @@ namespace LunaCompiler
   class Function : ISymbol
   {
     public readonly Type type;
+    public readonly bool isStatic;
     public readonly String name;
     public readonly Type returnType;
     public readonly List<Statement> statements;
-    public Function(Type type, String name, Type returnType, List<Statement> statements)
+    public Function(Type type, bool isStatic, String name, Type returnType, List<Statement> statements)
     {
       this.type = type;
+      this.isStatic = isStatic;
       this.name = name;
       this.returnType = returnType;
       this.statements = statements;
     }
+
+    public String Name => name;
+    public Type Type => type;
 
     public void Write(IndentedTextWriter writer)
     {
@@ -126,16 +132,40 @@ namespace LunaCompiler
     }
   }
 
-  class Statement
+  abstract class Statement
   {
-    public readonly MemberAccess memberAccess;
-    public Statement(MemberAccess memberAccess)
+  }
+
+  class VarOrCallChainMaybeAssignStatement: Statement
+  {
+    public readonly VarOrCallChain varOrCallChain;
+    public readonly Expression valueToAssignExpression;
+    public VarOrCallChainMaybeAssignStatement(VarOrCallChain varOrCallChain, Expression valueToAssignExpression)
     {
-      this.memberAccess = memberAccess;
+      this.varOrCallChain = varOrCallChain;
+      this.valueToAssignExpression = valueToAssignExpression;
     }
   }
 
-  class MemberAccess
+  class DeclarationStatement: Statement, ISymbol
+  {
+    public readonly bool isVar;
+    public readonly Type type;
+    public readonly String name;
+    public readonly Expression initializer;
+    public DeclarationStatement(bool isVar, Type type, String name, Expression initializer)
+    {
+      this.isVar = isVar;
+      this.type = type;
+      this.name = name;
+      this.initializer = initializer;
+    }
+
+    public String Name => name;
+    public Type Type => type;
+  }
+
+  class VarOrCallChain
   {
     /*
     Grammar:
@@ -151,18 +181,18 @@ namespace LunaCompiler
     min(max(5, 7), 9).toString().length
     */
 
-    public readonly List<VariableOrCall> variableOrCalls;
-    public MemberAccess(List<VariableOrCall> variableOrCall)
+    public readonly List<VarOrCall> varOrCalls;
+    public VarOrCallChain(List<VarOrCall> varOrCall)
     {
-      this.variableOrCalls = variableOrCall;
+      this.varOrCalls = varOrCall;
     }
   }
 
-  class VariableOrCall
+  class VarOrCall
   {
     public readonly ISymbol symbolToAccessOrCall;
     public readonly List<Expression> argumentExpressions;
-    public VariableOrCall(ISymbol symbolToAccessOrCall, List<Expression> argumentExpressions)
+    public VarOrCall(ISymbol symbolToAccessOrCall, List<Expression> argumentExpressions)
     {
       this.symbolToAccessOrCall = symbolToAccessOrCall;
       this.argumentExpressions = argumentExpressions;
@@ -172,9 +202,11 @@ namespace LunaCompiler
   class Expression
   {
     public readonly Token literal;
-    public Expression(Token literal)
+    public readonly Type type;
+    public Expression(Token literal, Type type)
     {
       this.literal = literal;
+      this.type = type;
     }
   }
 }
