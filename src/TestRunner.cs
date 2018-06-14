@@ -31,6 +31,7 @@ namespace LunaCompiler
         // Delete the actual output file from the previous run
         System.IO.File.Delete(actualOutputFile);
 
+        stopWatch.Restart();
         try
         {
           RunOneTest(testSourceFile, actualOutputFile);
@@ -39,6 +40,7 @@ namespace LunaCompiler
         {
           System.IO.File.AppendAllText(actualOutputFile, ex.ToString());
         }
+        stopWatch.Stop();
 
         var durationMillisec = stopWatch.Elapsed.TotalMilliseconds;
 
@@ -51,7 +53,7 @@ namespace LunaCompiler
     {
       using (var reader = new System.IO.StreamReader(System.IO.File.OpenRead(testSourceFile)))
       {
-        stopWatch.Start();
+        
         var fileName = System.IO.Path.GetFileNameWithoutExtension(testSourceFile);
         var tokenizer = new Tokenizer(reader);
         var parser = new Parser(fileName, tokenizer);
@@ -71,17 +73,42 @@ namespace LunaCompiler
         }
 
         var compiler = new Compiler(syntaxTree);
-        var module = compiler.Compile();
+        Module module;
+        CompilerException compilerException;
+        try
+        {
+          module = compiler.Compile();
+          compilerException = null;
+        }
+        catch (CompilerException ex)
+        {
+          compilerException = ex;
+          module = null;
+        }
 
         // Write compiler output
         using (var sw = new StreamWriter(outputFile, append: true))
         {
           using (var writer = new IndentedTextWriter(sw, "  "))
           {
-            writer.WriteLine("Compiled module:");
-            module.Write(writer);
-            writer.WriteLine("");
+            if (compilerException != null)
+            {
+              writer.WriteLine("Compile failed:");
+              writer.WriteLine(compilerException.Message);
+              writer.WriteLine("");
+            }
+            else
+            {
+              writer.WriteLine("Compiled module:");
+              module.Write(writer);
+              writer.WriteLine("");
+            }
           }
+        }
+
+        if (compilerException != null)
+        {
+          return;
         }
 
         string cppCode;
@@ -109,8 +136,6 @@ namespace LunaCompiler
             writer.Write(programOutput);
           }
         }
-
-        stopWatch.Stop();
       }
     }
 

@@ -20,26 +20,18 @@ namespace LunaCompiler
     Comma
   }
 
-  class Token
+  public class Token
   {
-    public TokenType type;
-    public string value;
-    public Token()
-    {
-      type = TokenType.Unknown;
-      value = "";
-    }
-
-    public void Set(TokenType type, String value)
+    public readonly TokenType type;
+    public readonly string value;
+    public string sourceLine;
+    public readonly int lineOffset;
+    public Token(TokenType type, String value, int lineOffset)
     {
       this.type = type;
       this.value = value;
-    }
-
-    public void Copy(Token other)
-    {
-      this.type = other.type;
-      this.value = other.value;
+      this.sourceLine = ""; // Will be set when the line is completed
+      this.lineOffset = lineOffset;
     }
 
     public override string ToString()

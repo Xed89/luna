@@ -1,0 +1,22 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main' (static)
+      type:
+        null
+      statements:
+        [0]: 
+          DeclarationStatementSyntax
+            let n1
+              ExpressionSyntax '57'
+        [1]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'n1'
+              ExpressionSyntax '68'
+
+Compile failed:
+Variable n1 can't be modified because declared with 'let'
+

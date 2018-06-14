@@ -1,0 +1,4 @@
+type Program
+  fun static main()
+    let n1 = 57
+    n1 = 68

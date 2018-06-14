@@ -29,7 +29,7 @@ namespace LunaCompiler
         }
         else
         {
-          throw new ArgumentException($"Unexpected syntax {node.GetType().Name}");
+          throw new CompilerException($"Unexpected syntax {node.GetType().Name}");
         }
       }
 
@@ -73,7 +73,7 @@ namespace LunaCompiler
       if (result != null)
         return result;
 
-      throw new ArgumentException($"Could not find identifier {identifier.value}");
+      throw new CompilerException($"Could not find identifier {identifier.value}", identifier);
     }
 
     private ISymbol FindIdentifierOrNull(Token identifier)
@@ -113,7 +113,7 @@ namespace LunaCompiler
         }
         else
         {
-          throw new ArgumentException($"Unknown statement type: {statementSyntax.GetType().Name}");
+          throw new CompilerException($"Unknown statement type: {statementSyntax.GetType().Name}");
         }
       }
 
@@ -151,7 +151,7 @@ namespace LunaCompiler
               {
                 // TODO Test this case
                 if (variableOrCallSyntax.argumentExpressionSyntaxes != null)
-                  throw new ArgumentException($"{typeForStaticAccess.name} is a type and can't be invoked as a function");
+                  throw new CompilerException($"{typeForStaticAccess.name} is a type and can't be invoked as a function", variableOrCallSyntax.identifierToken);
 
                 // Ok go on, the next will be a static method or field
                 state = StatementCompileState.TypeForStaticAccess;
@@ -163,14 +163,14 @@ namespace LunaCompiler
               {
                 // TODO Test this case
                 if (variableOrCallSyntax.argumentExpressionSyntaxes != null)
-                  throw new ArgumentException($"{identifier.Name} is a type and can't be invoked as a function");
+                  throw new CompilerException($"{identifier.Name} is a type and can't be invoked as a function", variableOrCallSyntax.identifierToken);
 
                 variableOrCalls.Add(new VarOrCall(identifier, null));
                 state = StatementCompileState.AccessDone;
                 break;
               }
               
-              throw new ArgumentException($"Could not resolve {variableOrCallSyntax.identifierToken.value}");
+              throw new CompilerException($"Could not resolve {variableOrCallSyntax.identifierToken.value}", variableOrCallSyntax.identifierToken);
             }
 
           case StatementCompileState.TypeForStaticAccess:
@@ -182,7 +182,7 @@ namespace LunaCompiler
                 var fun = typeForStaticAccess.GetFunctionByName(functionName);
                 if (fun == null)
                 {
-                  throw new ArgumentException($"Type {typeForStaticAccess.name} has no function named '{functionName}'");
+                  throw new CompilerException($"Type {typeForStaticAccess.name} has no function named '{functionName}'", variableOrCallSyntax.identifierToken);
                 }
 
                 // Evaluate the args
@@ -197,13 +197,13 @@ namespace LunaCompiler
               }
               else
               {
-                throw new ArgumentException($"TODO Static field access not implemented");
+                throw new CompilerException($"TODO Static field access not implemented");
               }
             }
             break;
 
           default:
-            throw new ArgumentException($"Invalid statement compiler state: {state}");
+            throw new CompilerException($"Invalid statement compiler state: {state}");
         }
       }
 
@@ -212,10 +212,10 @@ namespace LunaCompiler
       {
         // TODO Test the following error cases
         case StatementCompileState.Start:
-          throw new ArgumentException($"Empty statement");
+          throw new CompilerException($"Empty statement");
 
         case StatementCompileState.TypeForStaticAccess:
-          throw new ArgumentException($"Member access expected");
+          throw new CompilerException($"Member access expected");
 
         case StatementCompileState.CallDone:
           // The statemend ended with a call, it's valid.
@@ -226,8 +226,15 @@ namespace LunaCompiler
           // The statement ended with a varible access, an assign is expected to form a valid statement
           if (statementSyntax.valueToAssignExpression == null)
           {
-            throw new ArgumentException($"Assign operator expected");
+            throw new CompilerException($"Assign operator expected");
           }
+
+          var assignedSymbol = (DeclarationStatement)(variableOrCalls[variableOrCalls.Count-1].symbolToAccessOrCall);
+          if (!assignedSymbol.isVar)
+          {
+            throw new CompilerException($"Variable {assignedSymbol.name} can't be modified because declared with 'let'");
+          }
+
           // The statemend ended with a call, it's valid.
           var valueToAssignExpression = CompileExpression(statementSyntax.valueToAssignExpression);
           // TODO Check the type assigned agains the variable type
@@ -235,7 +242,7 @@ namespace LunaCompiler
           break;
 
         default:
-          throw new ArgumentException($"Invalid statement compiler final state: {state}");
+          throw new CompilerException($"Invalid statement compiler final state: {state}");
       }
     }
 

@@ -7,18 +7,57 @@ namespace LunaCompiler
   class Tokenizer
   {
     private readonly TextReader input;
-    private bool isAtLineStart;
+    private List<Token> currLineTokens;
+    private int idxTokenCurrLine;
     private readonly HashSet<String> keywords;
 
     public Tokenizer(TextReader input)
     {
       this.input = input;
-      isAtLineStart = false;
+      this.currLineTokens = new List<Token>();
+      this.idxTokenCurrLine = 0;
       keywords = new HashSet<string>() {"fun", "type", "static", "let", "var"};
     }
 
-    public bool TryGetNextToken(Token token)
+    public Token GetNextTokenOrNull()
     {
+      MaybeTokenizeOneLine();
+
+      if (currLineTokens.Count == 0)
+        return null;
+
+      return currLineTokens[idxTokenCurrLine++];
+    }
+
+    private void MaybeTokenizeOneLine()
+    {
+      if (idxTokenCurrLine >= currLineTokens.Count)
+      {
+        currLineTokens.Clear();
+        idxTokenCurrLine = 0;
+
+        string sourceLine = "";
+        while (true)
+        {
+          var token = mTryGetNextToken(ref sourceLine);
+          if (token != null)
+            currLineTokens.Add(token);
+
+          if ((token == null) || (token.type == TokenType.NewLine))
+          {
+            //Fix all token lines
+            for(int i=0; i<currLineTokens.Count; i++)
+              currLineTokens[i].sourceLine = sourceLine;
+            
+            break;
+          }
+        }
+      }
+    }
+
+    public Token mTryGetNextToken(ref string sourceLine)
+    {
+      var lineOffset = sourceLine.Length;
       var state = TokenizerState.Begin;
       var tokenType = TokenType.Unknown;
       var accumulator = "";
@@ -26,17 +65,18 @@ namespace LunaCompiler
       while (true)
       {
         var readInt = input.Peek();
-        if (readInt == -1)
-        {
-          return TryFillTokenIfValidAtInputEnd(token, state);
-        }
+        var isStreamEnd = (readInt == -1);
 
         var readChar = (char)readInt;
         var acceptChar = TokenizerInputCharAccept.Unexpected;
         switch (state)
         {
           case TokenizerState.Begin:
-            if (isCharForIdentifierStart(readChar))
+            if (isStreamEnd)
+            {
+              return null;
+              
+            } else if (isCharForIdentifierStart(readChar))
             {
               acceptChar = TokenizerInputCharAccept.Accumulate;
               state = TokenizerState.Identifier;
@@ -63,7 +103,7 @@ namespace LunaCompiler
             else if (readChar == ' ')
             {
               // Note that here we don't handle tabs or other unicode whitespaces, by design
-              if (isAtLineStart)
+              if (lineOffset == 0)
               {
                 // We have an indentation, convert it into a token
                 acceptChar = TokenizerInputCharAccept.Accumulate;
@@ -121,7 +161,7 @@ namespace LunaCompiler
             break;
 
           case TokenizerState.Indentation:
-            if (readChar == ' ')
+            if ((!isStreamEnd) && (readChar == ' '))
             {
               acceptChar = TokenizerInputCharAccept.Accumulate;
             }
@@ -133,7 +173,7 @@ namespace LunaCompiler
             break;
 
           case TokenizerState.Identifier:
-            if (isCharForIdentifier(readChar))
+            if ((!isStreamEnd) && isCharForIdentifier(readChar))
             {
               //Keep going!
               acceptChar = TokenizerInputCharAccept.Accumulate;
@@ -147,7 +187,7 @@ namespace LunaCompiler
             break;
 
           case TokenizerState.Number:
-            if (Char.IsDigit(readChar))
+            if ((!isStreamEnd) && Char.IsDigit(readChar))
             {
               //Keep going!
               acceptChar = TokenizerInputCharAccept.Accumulate;
@@ -162,7 +202,11 @@ namespace LunaCompiler
             break;
 
           case TokenizerState.String:
-            if (readChar == '"')
+            if (isStreamEnd)
+            {
+              acceptChar = TokenizerInputCharAccept.Unexpected;
+              
+            } else if (readChar == '"')
             {
               acceptChar = TokenizerInputCharAccept.DiscardAndTokenComplete;
               tokenType = TokenType.String;
@@ -175,7 +219,7 @@ namespace LunaCompiler
             break;
 
           case TokenizerState.NewLineCR:
-            if (readChar == '\n')
+            if ((!isStreamEnd) && (readChar == '\n'))
             {
               // Met a \r\n couple, Windows line ending style
               acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
@@ -197,24 +241,31 @@ namespace LunaCompiler
         switch (acceptChar)
         {
           case TokenizerInputCharAccept.Unexpected:
-            throw new ArgumentException($"Unexpected character: '{readChar}'");
+            if (isStreamEnd)
+              throw new ArgumentException($"Unexpected end of file");
+            else
+              throw new ArgumentException($"Unexpected character: '{readChar}'");
 
           case TokenizerInputCharAccept.Accumulate:
+            sourceLine += readChar;
             accumulator += readChar;
             input.Read();
             break;
 
           case TokenizerInputCharAccept.AccumulateAndTokenComplete:
+            sourceLine += readChar;
             accumulator += readChar;
             input.Read();
             setTokenAndReturnTrue = true;
             break;
 
           case TokenizerInputCharAccept.Discard:
+            sourceLine += readChar;
             input.Read();
             break;
 
           case TokenizerInputCharAccept.DiscardAndTokenComplete:
+            sourceLine += readChar;
             input.Read();
             setTokenAndReturnTrue = true;
             break;
@@ -229,9 +280,7 @@ namespace LunaCompiler
 
         if (setTokenAndReturnTrue)
         {
-          isAtLineStart = (tokenType == TokenType.NewLine);
-          token.Set(tokenType, accumulator);
-          return true;
+          return new Token(tokenType, accumulator, lineOffset);
         }
       }
     }
@@ -247,8 +296,29 @@ namespace LunaCompiler
 
     private bool TryFillTokenIfValidAtInputEnd(Token token, TokenizerState state)
     {
-      // TODO
-      return false;
+      switch (state)
+        {
+          case TokenizerState.Begin:
+            return false;
+
+          case TokenizerState.Indentation:
+            return true;
+
+          case TokenizerState.Identifier:
+            return true;
+
+          case TokenizerState.Number:
+            return true;
+
+          case TokenizerState.String:
+            return false;
+
+          case TokenizerState.NewLineCR:
+            return true;
+
+          default:
+            throw new ArgumentException($"Unexpected state for Tokenizer: '{state}'");
+        }
     }
 
     private enum TokenizerState

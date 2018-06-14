@@ -19,11 +19,8 @@ namespace LunaCompiler
     private int nestingDepth;
     private void NextToken()
     {
-      token.Copy(nextToken);
-      if (!tokenizer.TryGetNextToken(nextToken))
-      {
-        nextToken = null;
-      }
+      token = nextToken;
+      nextToken = tokenizer.GetNextTokenOrNull();
     }
     private bool HasNextToken()
     {
@@ -31,9 +28,7 @@ namespace LunaCompiler
     }
     private Token Current()
     {
-      var t = new Token();
-      t.Copy(token);
-      return t;
+      return token;
     }
     private void NestingLevelIncrease()
     {
@@ -43,7 +38,7 @@ namespace LunaCompiler
     {
       if (nestingDepth <= 0)
       {
-        throw new ArgumentException("Can't decrease nesting level because it's zero");
+        throw CreateException("Can't decrease nesting level because it's zero");
       }
       nestingDepth -= 1;
     }
@@ -52,8 +47,8 @@ namespace LunaCompiler
     {
       var nodes = new List<SyntaxNode>();
 
-      token = new Token();
-      nextToken = new Token();
+      token = null;
+      nextToken = null;
       nestingDepth = 0;
       NextToken();
 
@@ -66,7 +61,7 @@ namespace LunaCompiler
         }
         else
         {
-          throw new ArgumentException($"Unexpected token {nextToken.ToString()}");
+          throw CreateException($"Unexpected token {nextToken.ToString()}");
         }
       }
 
@@ -90,7 +85,7 @@ namespace LunaCompiler
         }
         else
         {
-          throw new ArgumentException($"Unexpected token {nextToken.ToString()}");
+          throw CreateException($"Unexpected token {nextToken.ToString()}");
         }
       }
 
@@ -230,7 +225,7 @@ namespace LunaCompiler
       }
       else
       {
-        throw new ArgumentException("Invalid expression");
+        throw CreateException("Invalid expression");
       }
       //TODO handle expression type
     }
@@ -260,11 +255,16 @@ namespace LunaCompiler
     {
       if ((nextToken == null) || (nextToken.type != tokenType))
       {
-        throw new ArgumentException($"Expected token {tokenType.ToString()}, but found {(nextToken == null ? "null" : nextToken.ToString())}");
+        throw CreateException($"Expected token {tokenType.ToString()}, but found {(nextToken == null ? "null" : nextToken.ToString())}");
       }
 
       NextToken();
       return true;
+    }
+
+    private CompilerException CreateException(string msg)
+    {
+      return new CompilerException(msg, token);
     }
   }
 }
