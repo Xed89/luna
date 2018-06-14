@@ -1,7 +1,9 @@
 type Program
   fun static main()
-    let number1 = 57
-    var number2 = 82
-    Console.writeLine("Before assign, number1: %i, number2: %i", number1, number2)
-    number2 = 93
-    Console.writeLine("After assign, number1: %i, number2: %i", number1, number2)
+    let n1 = 57
+    var n2 = 82
+    var s1 = "Hi"
+    Console.writeLine("n1: %i, n2: %i, s1: %s", n1, n2, s1)
+    n2 = 93
+    s1 = "Hey"
+    Console.writeLine("n1: %i, n2: %i, s1: %s", n1, n2, s1)

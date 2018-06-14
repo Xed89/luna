@@ -8,32 +8,44 @@ TypeDeclaration 'Program'
       statements:
         [0]: 
           DeclarationStatementSyntax
-            let number1
+            let n1
               ExpressionSyntax '57'
         [1]: 
           DeclarationStatementSyntax
-            var number2
+            var n2
               ExpressionSyntax '82'
         [2]: 
-          VarOrCallChainMaybeAssignStatementSyntax
-            VarOrCallChainSyntax
-              [0]: 
-                VariableOrCall 'Console'
-              [1]: 
-                VariableOrCall 'writeLine'
-                  [0]: 
-                    ExpressionSyntax 'Before assign, number1: %i, number2: %i'
-                  [1]: 
-                    ExpressionSyntax 'number1'
-                  [2]: 
-                    ExpressionSyntax 'number2'
+          DeclarationStatementSyntax
+            var s1
+              ExpressionSyntax 'Hi'
         [3]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
-                VariableOrCall 'number2'
-              ExpressionSyntax '93'
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionSyntax 'n1: %i, n2: %i, s1: %s'
+                  [1]: 
+                    ExpressionSyntax 'n1'
+                  [2]: 
+                    ExpressionSyntax 'n2'
+                  [3]: 
+                    ExpressionSyntax 's1'
         [4]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'n2'
+              ExpressionSyntax '93'
+        [5]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 's1'
+              ExpressionSyntax 'Hey'
+        [6]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
@@ -41,11 +53,13 @@ TypeDeclaration 'Program'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    ExpressionSyntax 'After assign, number1: %i, number2: %i'
+                    ExpressionSyntax 'n1: %i, n2: %i, s1: %s'
                   [1]: 
-                    ExpressionSyntax 'number1'
+                    ExpressionSyntax 'n1'
                   [2]: 
-                    ExpressionSyntax 'number2'
+                    ExpressionSyntax 'n2'
+                  [3]: 
+                    ExpressionSyntax 's1'
 
 Compiled module:
 Module variables
@@ -53,6 +67,8 @@ Module variables
     Function main()
       LunaCompiler.DeclarationStatement
       LunaCompiler.DeclarationStatement
+      LunaCompiler.DeclarationStatement
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
@@ -75,11 +91,13 @@ public:
 class Program {
 public:
   static void main() {
-    int number1 = 57;
-    int number2 = 82;
-    Console::writeLine("Before assign, number1: %i, number2: %i", number1, number2);
-    number2 = 93;
-    Console::writeLine("After assign, number1: %i, number2: %i", number1, number2);
+    int n1 = 57;
+    int n2 = 82;
+    const char* s1 = "Hi";
+    Console::writeLine("n1: %i, n2: %i, s1: %s", n1, n2, s1);
+    n2 = 93;
+    s1 = "Hey";
+    Console::writeLine("n1: %i, n2: %i, s1: %s", n1, n2, s1);
   }
 };
 int main() {
@@ -87,5 +105,5 @@ int main() {
 }
 
 Program output:
-Before assign, number1: 57, number2: 82
-After assign, number1: 57, number2: 93
+n1: 57, n2: 82, s1: Hi
+n1: 57, n2: 93, s1: Hey

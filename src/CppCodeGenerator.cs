@@ -85,15 +85,7 @@ namespace LunaCompiler
                   writer.Write(", ");
                 }
                 isFirstArg = false;
-                //Assume literal for now
-                if (argExpr.type.name == "string")
-                {
-                  writer.Write($"\"{argExpr.literal.value}\"");
-                }
-                else
-                {
-                  writer.Write(argExpr.literal.value);
-                }
+                GenerateExpression(argExpr);
               }
               writer.Write($")");
             }
@@ -110,18 +102,33 @@ namespace LunaCompiler
 
           if (varOrCallChainMaybeAssignStatement.valueToAssignExpression != null)
           {
-            writer.Write($" = {varOrCallChainMaybeAssignStatement.valueToAssignExpression.literal.value}");
+            writer.Write($" = ");
+            GenerateExpression(varOrCallChainMaybeAssignStatement.valueToAssignExpression);
           }
         } 
         else if (statement.GetType() == typeof(DeclarationStatement))
         {
           var declarationStatement = (DeclarationStatement)statement;
           // isVar is ignored because the read-only behavior of let is guaranted by the luna compiler checks
-          writer.Write($"{declarationStatement.type.name} {declarationStatement.name}");
+
+          string actualType;
+          switch (declarationStatement.type.name)
+          {
+            case "string":
+              actualType = "const char*";
+              break;
+
+            default:
+              actualType = declarationStatement.type.name;
+              break;
+          }
+
+          writer.Write($"{actualType} {declarationStatement.name}");
           if (declarationStatement.initializer != null)
           {
-            //Assume string literal for now
-            writer.Write($" = {declarationStatement.initializer.literal.value}");
+            //Assume literal for now
+            writer.Write($" = ");
+            GenerateExpression(declarationStatement.initializer);
           }
         }
         else
@@ -133,6 +140,19 @@ namespace LunaCompiler
 
       writer.Indent -= 1;
       writer.WriteLine($"}}");
+    }
+
+    private void GenerateExpression(Expression expression)
+    {
+      //Assume literal for now
+      if (expression.literal.type == TokenType.String)
+      {
+        writer.Write($"\"{expression.literal.value}\"");
+      }
+      else
+      {
+        writer.Write(expression.literal.value);
+      }
     }
   }
 }
