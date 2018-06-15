@@ -36,6 +36,56 @@ TypeDeclaration 'Program'
                 right: 
                   ExpressionLiteralSyntax '8'
         [2]: 
+          DeclarationStatementSyntax
+            let n3
+              ExpressionBinOpSyntax
+                Op: '+'
+                left: 
+                  ExpressionBinOpSyntax
+                    Op: '-'
+                    left: 
+                      ExpressionBinOpSyntax
+                        Op: '*'
+                        left: 
+                          ExpressionBinOpSyntax
+                            Op: '*'
+                            left: 
+                              ExpressionLiteralSyntax '2'
+                            right: 
+                              ExpressionLiteralSyntax '3'
+                        right: 
+                          ExpressionLiteralSyntax '5'
+                    right: 
+                      ExpressionBinOpSyntax
+                        Op: '/'
+                        left: 
+                          ExpressionBinOpSyntax
+                            Op: '*'
+                            left: 
+                              ExpressionLiteralSyntax '8'
+                            right: 
+                              ExpressionLiteralSyntax '9'
+                        right: 
+                          ExpressionLiteralSyntax '2'
+                right: 
+                  ExpressionBinOpSyntax
+                    Op: '/'
+                    left: 
+                      ExpressionLiteralSyntax '80'
+                    right: 
+                      ExpressionParenthesizedSyntax
+                        ExpressionBinOpSyntax
+                          Op: '-'
+                          left: 
+                            ExpressionLiteralSyntax '22'
+                          right: 
+                            ExpressionBinOpSyntax
+                              Op: '/'
+                              left: 
+                                ExpressionLiteralSyntax '4'
+                              right: 
+                                ExpressionLiteralSyntax '2'
+        [3]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
@@ -43,16 +93,19 @@ TypeDeclaration 'Program'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    ExpressionLiteralSyntax 'n1: %i, n2: %i'
+                    ExpressionLiteralSyntax 'n1: %i, n2: %i, n3: %i'
                   [1]: 
                     ExpressionLiteralSyntax 'n1'
                   [2]: 
                     ExpressionLiteralSyntax 'n2'
+                  [3]: 
+                    ExpressionLiteralSyntax 'n3'
 
 Compiled module:
 Module expressions
   Type Program
     Function main()
+      LunaCompiler.DeclarationStatement
       LunaCompiler.DeclarationStatement
       LunaCompiler.DeclarationStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
@@ -77,7 +130,8 @@ public:
   static void main() {
     int n1 = 1 + 5 * 8;
     int n2 = (1 + 5) * 8;
-    Console::writeLine("n1: %i, n2: %i", n1, n2);
+    int n3 = 2 * 3 * 5 - 8 * 9 / 2 + 80 / (22 - 4 / 2);
+    Console::writeLine("n1: %i, n2: %i, n3: %i", n1, n2, n3);
   }
 };
 int main() {
@@ -85,4 +139,4 @@ int main() {
 }
 
 Program output:
-n1: 41, n2: 48
+n1: 41, n2: 48, n3: -2

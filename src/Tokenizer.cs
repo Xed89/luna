@@ -158,10 +158,22 @@ namespace LunaCompiler
               tokenType = TokenType.Plus;
 
             }
+            else if (readChar == '-')
+            {
+              acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
+              tokenType = TokenType.Minus;
+
+            }
             else if (readChar == '*')
             {
               acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
               tokenType = TokenType.Asterisk;
+
+            }
+            else if (readChar == '/')
+            {
+              acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
+              tokenType = TokenType.Slash;
 
             }
             else if (readChar == '"')

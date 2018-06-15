@@ -225,7 +225,7 @@ namespace LunaCompiler
         facts.Add(ParseExpressionFacts());
       }
 
-      return BuildBinOpSamePrecedenceExprTree(facts, ops);
+      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(facts, ops);
     }
 
     private IExpressionSyntax ParseExpressionFacts()
@@ -251,10 +251,26 @@ namespace LunaCompiler
         terminals.Add(expr);
       }
 
-      return BuildBinOpSamePrecedenceExprTree(terminals, ops);
+      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(terminals, ops);
     }
 
-    private IExpressionSyntax BuildBinOpSamePrecedenceExprTree(List<IExpressionSyntax> exprs, List<Token> ops)
+    private IExpressionSyntax BuildBinOpSamePrecedenceExprTree_LeftAssociative(List<IExpressionSyntax> exprs, List<Token> ops)
+    {
+      if (exprs.Count == 1)
+        return exprs[0];
+
+      IExpressionSyntax left = new ExpressionBinOpSyntax(ops[0], 
+                                                         exprs[0], 
+                                                         exprs[1]);
+      for(var i= 2; i< exprs.Count; i++)
+      {
+        left = new ExpressionBinOpSyntax(ops[i-1], left, exprs[i]);
+      }
+      return left;
+    }
+
+    /*
+    private IExpressionSyntax BuildBinOpSamePrecedenceExprTree_RightAssociative(List<IExpressionSyntax> exprs, List<Token> ops)
     {
       if (exprs.Count == 1)
         return exprs[0];
@@ -262,12 +278,13 @@ namespace LunaCompiler
       IExpressionSyntax right = new ExpressionBinOpSyntax(ops[ops.Count-1], 
                                                           exprs[exprs.Count-2], 
                                                           exprs[exprs.Count-1]);
-      for(var i= exprs.Count-3; i>0; i--)
+      for(var i= exprs.Count-3; i>=0; i--)
       {
         right = new ExpressionBinOpSyntax(ops[i+1], exprs[i], right);
       }
       return right;
     }
+    */
 
     private IExpressionSyntax ParseExpressionTerminalsOrNull()
     {
