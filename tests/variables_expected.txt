@@ -9,15 +9,15 @@ TypeDeclaration 'Program'
         [0]: 
           DeclarationStatementSyntax
             let n1
-              ExpressionSyntax '57'
+              ExpressionLiteralSyntax '57'
         [1]: 
           DeclarationStatementSyntax
             var n2
-              ExpressionSyntax '82'
+              ExpressionLiteralSyntax '82'
         [2]: 
           DeclarationStatementSyntax
             var s1
-              ExpressionSyntax 'Hi'
+              ExpressionLiteralSyntax 'Hi'
         [3]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
@@ -26,25 +26,25 @@ TypeDeclaration 'Program'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    ExpressionSyntax 'n1: %i, n2: %i, s1: %s'
+                    ExpressionLiteralSyntax 'n1: %i, n2: %i, s1: %s'
                   [1]: 
-                    ExpressionSyntax 'n1'
+                    ExpressionLiteralSyntax 'n1'
                   [2]: 
-                    ExpressionSyntax 'n2'
+                    ExpressionLiteralSyntax 'n2'
                   [3]: 
-                    ExpressionSyntax 's1'
+                    ExpressionLiteralSyntax 's1'
         [4]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
                 VariableOrCall 'n2'
-              ExpressionSyntax '93'
+              ExpressionLiteralSyntax '93'
         [5]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
                 VariableOrCall 's1'
-              ExpressionSyntax 'Hey'
+              ExpressionLiteralSyntax 'Hey'
         [6]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
@@ -53,13 +53,13 @@ TypeDeclaration 'Program'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    ExpressionSyntax 'n1: %i, n2: %i, s1: %s'
+                    ExpressionLiteralSyntax 'n1: %i, n2: %i, s1: %s'
                   [1]: 
-                    ExpressionSyntax 'n1'
+                    ExpressionLiteralSyntax 'n1'
                   [2]: 
-                    ExpressionSyntax 'n2'
+                    ExpressionLiteralSyntax 'n2'
                   [3]: 
-                    ExpressionSyntax 's1'
+                    ExpressionLiteralSyntax 's1'
 
 Compiled module:
 Module variables

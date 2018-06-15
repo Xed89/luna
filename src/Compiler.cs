@@ -186,7 +186,7 @@ namespace LunaCompiler
                 }
 
                 // Evaluate the args
-                var argExprs = new List<Expression>();
+                var argExprs = new List<IExpression>();
                 foreach (var arg in variableOrCallSyntax.argumentExpressionSyntaxes)
                 {
                   argExprs.Add(CompileExpression(arg));
@@ -248,12 +248,12 @@ namespace LunaCompiler
 
     private void CompileFunctionStatement_DeclarationStatement(DeclarationStatementSyntax declarationStatement, List<Statement> statements)
     {
-      Expression initializer = null;
+      IExpression initializer = null;
       Type type = null;
       if (declarationStatement.initializer != null)
       {
         initializer = CompileExpression(declarationStatement.initializer);
-        type = initializer.type;
+        type = initializer.Type;
       }
       else
       {
@@ -270,7 +270,28 @@ namespace LunaCompiler
       statements.Add(ds);
     }
 
-    private Expression CompileExpression(ExpressionSyntax expressionSyntax)
+    private IExpression CompileExpression(IExpressionSyntax expressionSyntax, 
+                                          int parentOpPrecedence = int.MaxValue)
+    {
+      if (expressionSyntax.GetType() == typeof (ExpressionBinOpSyntax))
+      {
+        var expressionBinOpSyntax = (ExpressionBinOpSyntax)expressionSyntax;
+        return new ExpressionBinOp(expressionBinOpSyntax.op,
+                                   CompileExpression(expressionBinOpSyntax.leftExpressionSyntax),
+                                   CompileExpression(expressionBinOpSyntax.rightExpressionSyntax));
+      }
+      else if (expressionSyntax.GetType() == typeof (ExpressionLiteralSyntax))
+      {
+        var expressionLiteralSyntax = (ExpressionLiteralSyntax)expressionSyntax;
+        return CompileExpressionLiteral(expressionLiteralSyntax);
+      }
+      else
+      {
+        throw new ArgumentException($"Could not determine type of expression");
+      }
+    }
+
+    private IExpression CompileExpressionLiteral(ExpressionLiteralSyntax expressionSyntax)
     {
       Type type = null;
       if (expressionSyntax.literal.type == TokenType.String)
@@ -293,7 +314,7 @@ namespace LunaCompiler
         throw new ArgumentException($"Could not determine type of expression");
       }
 
-      return new Expression(expressionSyntax.literal, type);
+      return new ExpressionLiteral(expressionSyntax.literal, type);
     }
 
     private void PrintInstruction(short instr)

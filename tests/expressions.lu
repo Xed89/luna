@@ -1,0 +1,4 @@
+type Program
+  fun static main()
+    let n1 = 1 + 5 * 8
+    Console.writeLine("n1: %i", n1)

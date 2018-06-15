@@ -1,0 +1,69 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main' (static)
+      type:
+        null
+      statements:
+        [0]: 
+          DeclarationStatementSyntax
+            let n1
+              ExpressionBinOpSyntax
+                Op: '+'
+                left: 
+                  ExpressionLiteralSyntax '1'
+                right: 
+                  ExpressionBinOpSyntax
+                    Op: '*'
+                    left: 
+                      ExpressionLiteralSyntax '5'
+                    right: 
+                      ExpressionLiteralSyntax '8'
+        [1]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionLiteralSyntax 'n1: %i'
+                  [1]: 
+                    ExpressionLiteralSyntax 'n1'
+
+Compiled module:
+Module expressions
+  Type Program
+    Function main()
+      LunaCompiler.DeclarationStatement
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
+  String constants
+
+Generated Cpp code:
+#include "stdio.h"
+#include "stdarg.h"
+class Console {
+public:
+  static void writeLine(const char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vfprintf(stdout, msg, argp);
+    fprintf(stdout, "\n");
+    va_end(argp);
+  }
+};
+
+class Program {
+public:
+  static void main() {
+    int n1 = 1 + 5 * 8;
+    Console::writeLine("n1: %i", n1);
+  }
+};
+int main() {
+  Program::main();
+}
+
+Program output:
+n1: 41

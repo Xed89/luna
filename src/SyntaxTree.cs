@@ -76,7 +76,7 @@ namespace LunaCompiler
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      var staticKeyword = isStatic ? " (static)": "";
+      var staticKeyword = isStatic ? " (static)" : "";
       writer.WriteLine($"Function '{nameToken.value}'{staticKeyword}");
       writer.Indent += 1;
 
@@ -106,8 +106,8 @@ namespace LunaCompiler
   class VarOrCallSyntax : SyntaxNode
   {
     public readonly Token identifierToken;
-    public readonly List<ExpressionSyntax> argumentExpressionSyntaxes;
-    public VarOrCallSyntax(Token identifierToken, List<ExpressionSyntax> argumentExpressionSyntaxes)
+    public readonly List<IExpressionSyntax> argumentExpressionSyntaxes;
+    public VarOrCallSyntax(Token identifierToken, List<IExpressionSyntax> argumentExpressionSyntaxes)
     {
       this.identifierToken = identifierToken;
       this.argumentExpressionSyntaxes = argumentExpressionSyntaxes;
@@ -134,7 +134,7 @@ namespace LunaCompiler
     }
   }
 
-  class VarOrCallChainSyntax : SyntaxNode
+  class VarOrCallChainSyntax : SyntaxNode, IExpressionSyntax
   {
     public readonly List<VarOrCallSyntax> variableOrCallSyntaxes;
     public VarOrCallChainSyntax(List<VarOrCallSyntax> variableOrCallSyntaxes)
@@ -166,8 +166,8 @@ namespace LunaCompiler
   class VarOrCallChainMaybeAssignStatementSyntax : StatementSyntax
   {
     public readonly VarOrCallChainSyntax varOrCallChainSyntax;
-    public readonly ExpressionSyntax valueToAssignExpression;
-    public VarOrCallChainMaybeAssignStatementSyntax(VarOrCallChainSyntax varOrCallChainSyntax, ExpressionSyntax valueToAssignExpression)
+    public readonly IExpressionSyntax valueToAssignExpression;
+    public VarOrCallChainMaybeAssignStatementSyntax(VarOrCallChainSyntax varOrCallChainSyntax, IExpressionSyntax valueToAssignExpression)
     {
       this.varOrCallChainSyntax = varOrCallChainSyntax;
       this.valueToAssignExpression = valueToAssignExpression;
@@ -194,8 +194,8 @@ namespace LunaCompiler
   {
     public readonly bool isVar;
     public readonly Token identifierToken;
-    public readonly ExpressionSyntax initializer;
-    public DeclarationStatementSyntax(bool isVar, Token identifierToken, ExpressionSyntax initializer)
+    public readonly IExpressionSyntax initializer;
+    public DeclarationStatementSyntax(bool isVar, Token identifierToken, IExpressionSyntax initializer)
     {
       this.isVar = isVar;
       this.identifierToken = identifierToken;
@@ -220,10 +220,69 @@ namespace LunaCompiler
     }
   }
 
-  class ExpressionSyntax : SyntaxNode
+  interface IExpressionSyntax
+  {
+    void WriteTree(IndentedTextWriter writer);
+  }
+
+  class ExpressionBinOpSyntax : SyntaxNode, IExpressionSyntax
+  {
+    public readonly Token op;
+    public readonly IExpressionSyntax leftExpressionSyntax;
+    public readonly IExpressionSyntax rightExpressionSyntax;
+    public ExpressionBinOpSyntax(Token op,
+                                 IExpressionSyntax leftExpressionSyntax,
+                                 IExpressionSyntax rightExpressionSyntax)
+    {
+      this.op = op;
+      this.leftExpressionSyntax = leftExpressionSyntax;
+      this.rightExpressionSyntax = rightExpressionSyntax;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine($"{GetType().Name}");
+      writer.Indent += 1;
+      
+      writer.WriteLine($"Op: '{op.value}'");
+      
+      writer.WriteLine($"left: ");
+      writer.Indent += 1;
+      leftExpressionSyntax.WriteTree(writer);
+      writer.Indent -= 1;
+
+      writer.WriteLine($"right: ");
+      writer.Indent += 1;
+      rightExpressionSyntax.WriteTree(writer);
+      writer.Indent -= 1;
+
+      writer.Indent -= 1;
+    }
+  }
+
+  /*
+  class ExpressionParenthesizedSyntax : SyntaxNode, IExpressionSyntax
+  {
+    public readonly IExpressionSyntax expression;
+    public ExpressionParenthesizedSyntax(IExpressionSyntax expression)
+    {
+      this.expression = expression;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine($"{GetType().Name}");
+      writer.Indent += 1;
+      expression.WriteTree(writer);
+      writer.Indent -= 1;
+    }
+  }
+  */
+
+  class ExpressionLiteralSyntax : SyntaxNode, IExpressionSyntax
   {
     public readonly Token literal;
-    public ExpressionSyntax(Token literal)
+    public ExpressionLiteralSyntax(Token literal)
     {
       this.literal = literal;
     }

@@ -142,16 +142,31 @@ namespace LunaCompiler
       writer.WriteLine($"}}");
     }
 
-    private void GenerateExpression(Expression expression)
+    private void GenerateExpression(IExpression expression)
     {
-      //Assume literal for now
-      if (expression.literal.type == TokenType.String)
+      if (expression.GetType() == typeof (ExpressionBinOp))
       {
-        writer.Write($"\"{expression.literal.value}\"");
+        var expressionBinOp = (ExpressionBinOp)expression;
+        GenerateExpression(expressionBinOp.leftExpr);
+        writer.Write($" {expressionBinOp.op.value} ");
+        GenerateExpression(expressionBinOp.rightExpr);
+      }
+      else if (expression.GetType() == typeof (ExpressionLiteral))
+      {
+        var expressionLiteral = (ExpressionLiteral)expression;
+        //Assume literal for now
+        if (expressionLiteral.literal.type == TokenType.String)
+        {
+          writer.Write($"\"{expressionLiteral.literal.value}\"");
+        }
+        else
+        {
+          writer.Write(expressionLiteral.literal.value);
+        }
       }
       else
       {
-        writer.Write(expression.literal.value);
+        throw new ArgumentException($"Could not determine type of expression");
       }
     }
   }

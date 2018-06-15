@@ -17,7 +17,11 @@ namespace LunaCompiler
     NewLine,
     Indentation,
     Equals,
-    Comma
+    Comma,
+    Plus,
+    Minus,
+    Asterisk,
+    Slash,
   }
 
   public class Token

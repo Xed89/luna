@@ -147,7 +147,7 @@ namespace LunaCompiler
     {
       var varOrCallChain = ParseVarOrCallChain();
       //TODO Handle assign
-      ExpressionSyntax valueToAssignExpression = null;
+      IExpressionSyntax valueToAssignExpression = null;
 
       if (Accept(TokenType.Equals))
       {
@@ -161,7 +161,7 @@ namespace LunaCompiler
     {
       Expect(TokenType.Identifier);
       var identifierToken = Current();
-      ExpressionSyntax initializer = null;
+      IExpressionSyntax initializer = null;
       if (Accept(TokenType.Equals))
       {
         initializer = ParseExpression();
@@ -184,12 +184,12 @@ namespace LunaCompiler
     {
       Expect(TokenType.Identifier);
       var identifier = Current();
-      List<ExpressionSyntax> argumentExpressionSyntaxes = null;
+      List<IExpressionSyntax> argumentExpressionSyntaxes = null;
       if (Accept(TokenType.OpenRoundParenthesis))
       {
         // Loop until we find a close parenthesis
         var isFirstArg = true;
-        argumentExpressionSyntaxes = new List<ExpressionSyntax>();
+        argumentExpressionSyntaxes = new List<IExpressionSyntax>();
         
         while (!Accept(TokenType.CloseRoundParenthesis))
         {
@@ -205,29 +205,92 @@ namespace LunaCompiler
       return new VarOrCallSyntax(identifier, argumentExpressionSyntaxes);
     }
 
-    private ExpressionSyntax ParseExpression()
+    private IExpressionSyntax ParseExpression()
+    {
+      var facts = new List<IExpressionSyntax>();
+      var ops = new List<Token>();
+      while (true)
+      {
+        if (facts.Count > 0)
+        {
+          // It's not the first, so to continue the fact chain we need to find a * or /
+          if (Accept(TokenType.Plus))
+            ops.Add(Current());
+          else if (Accept(TokenType.Minus))
+            ops.Add(Current());
+          else
+            break;
+        } 
+
+        facts.Add(ParseExpressionFacts());
+      }
+
+      return BuildBinOpSamePrecedenceExprTree(facts, ops);
+    }
+
+    private IExpressionSyntax ParseExpressionFacts()
+    {
+      var terminals = new List<IExpressionSyntax>();
+      var ops = new List<Token>();
+      while (true)
+      {
+        if (terminals.Count > 0)
+        {
+          // It's not the first, so to continue the fact chain we need to find a * or /
+          if (Accept(TokenType.Asterisk))
+            ops.Add(Current());
+          else if (Accept(TokenType.Slash))
+            ops.Add(Current());
+          else
+            break;
+        } 
+
+        var expr = ParseExpressionTerminalsOrNull();
+        if (expr == null)
+          throw CreateException("Expression expected");
+        terminals.Add(expr);
+      }
+
+      return BuildBinOpSamePrecedenceExprTree(terminals, ops);
+    }
+
+    private IExpressionSyntax BuildBinOpSamePrecedenceExprTree(List<IExpressionSyntax> exprs, List<Token> ops)
+    {
+      if (exprs.Count == 1)
+        return exprs[0];
+
+      IExpressionSyntax right = new ExpressionBinOpSyntax(ops[ops.Count-1], 
+                                                          exprs[exprs.Count-2], 
+                                                          exprs[exprs.Count-1]);
+      for(var i= exprs.Count-3; i>0; i--)
+      {
+        right = new ExpressionBinOpSyntax(ops[i+1], exprs[i], right);
+      }
+      return right;
+    }
+
+    private IExpressionSyntax ParseExpressionTerminalsOrNull()
     {
       if (Accept(TokenType.String))
       {
         var literal = Current();
-        return new ExpressionSyntax(literal);
+        return new ExpressionLiteralSyntax(literal);
       }
       else if (Accept(TokenType.Number))
       {
         var literal = Current();
-        return new ExpressionSyntax(literal);
+        return new ExpressionLiteralSyntax(literal);
       }
       else if (Accept(TokenType.Identifier))
       {
         //TODO memberAccessExpression
         var literal = Current();
-        return new ExpressionSyntax(literal);
+        return new ExpressionLiteralSyntax(literal);
       }
       else
       {
-        throw CreateException("Invalid expression");
+        return null;
       }
-      //TODO handle expression type
     }
 
     private bool AcceptIndentation(int nestingDepth)

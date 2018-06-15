@@ -139,8 +139,8 @@ namespace LunaCompiler
   class VarOrCallChainMaybeAssignStatement: Statement
   {
     public readonly VarOrCallChain varOrCallChain;
-    public readonly Expression valueToAssignExpression;
-    public VarOrCallChainMaybeAssignStatement(VarOrCallChain varOrCallChain, Expression valueToAssignExpression)
+    public readonly IExpression valueToAssignExpression;
+    public VarOrCallChainMaybeAssignStatement(VarOrCallChain varOrCallChain, IExpression valueToAssignExpression)
     {
       this.varOrCallChain = varOrCallChain;
       this.valueToAssignExpression = valueToAssignExpression;
@@ -152,8 +152,8 @@ namespace LunaCompiler
     public readonly bool isVar;
     public readonly Type type;
     public readonly String name;
-    public readonly Expression initializer;
-    public DeclarationStatement(bool isVar, Type type, String name, Expression initializer)
+    public readonly IExpression initializer;
+    public DeclarationStatement(bool isVar, Type type, String name, IExpression initializer)
     {
       this.isVar = isVar;
       this.type = type;
@@ -191,22 +191,45 @@ namespace LunaCompiler
   class VarOrCall
   {
     public readonly ISymbol symbolToAccessOrCall;
-    public readonly List<Expression> argumentExpressions;
-    public VarOrCall(ISymbol symbolToAccessOrCall, List<Expression> argumentExpressions)
+    public readonly List<IExpression> argumentExpressions;
+    public VarOrCall(ISymbol symbolToAccessOrCall, List<IExpression> argumentExpressions)
     {
       this.symbolToAccessOrCall = symbolToAccessOrCall;
       this.argumentExpressions = argumentExpressions;
     }
   }
 
-  class Expression
+  interface IExpression
+  {
+    Type Type { get; }
+  }
+
+  class ExpressionBinOp: IExpression
+  {
+    public readonly Token op;
+    public readonly IExpression leftExpr;
+    public readonly IExpression rightExpr;
+    public ExpressionBinOp(Token op, IExpression leftExpr, IExpression rightExpr)
+    {
+      this.op = op;
+      this.leftExpr = leftExpr;
+      this.rightExpr = rightExpr;
+    }
+
+    // TODO Consider type conversions
+    public Type Type => leftExpr.Type;
+  }
+
+  class ExpressionLiteral: IExpression
   {
     public readonly Token literal;
     public readonly Type type;
-    public Expression(Token literal, Type type)
+    public ExpressionLiteral(Token literal, Type type)
     {
       this.literal = literal;
       this.type = type;
     }
+
+    public Type Type => type;
   }
 }

@@ -22,7 +22,10 @@ varOrCallChainMaybeAssignStatement := varOrCallChain ['=' expression]
 varOrCallChain := varOrCall {'.' varOrCall}
 varOrCall := identifier ['(' [expression {, expression}] ')']
 
-expression := number | string | memberAccessExpression
+expression := expressionFacts {('+' | '-') expressionFacts}
+expressionFacts := expressionTerminals {('*' | '/') expressionTerminals}
+expressionTerminals := expressionLiteral | varOrCallChain | '(' expression ')'
+expressionLiteral := number | string
 
 type := identifier
 

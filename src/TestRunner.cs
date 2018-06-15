@@ -56,20 +56,47 @@ namespace LunaCompiler
         
         var fileName = System.IO.Path.GetFileNameWithoutExtension(testSourceFile);
         var tokenizer = new Tokenizer(reader);
-        var parser = new Parser(fileName, tokenizer);
 
-        var syntaxTree = parser.Parse();
+        CompilerException parserException;
+        SyntaxTree syntaxTree;
+        try
+        {
+          var parser = new Parser(fileName, tokenizer);
+          syntaxTree = parser.Parse();
+          parserException = null;
+        } catch (CompilerException ex)
+        {
+          parserException = ex;
+          syntaxTree = null;
+        }
 
         // Write parser output
         using (var sw = new StreamWriter(outputFile, append: true))
         {
           using (var writer = new IndentedTextWriter(sw, "  "))
           {
-            writer.WriteLine("Parsing completed");
-            writer.WriteLine("Syntax Tree:");
-            syntaxTree.WriteTree(writer);
-            writer.WriteLine("");
+            if (parserException != null)
+            {
+              writer.WriteLine("Parsing failed:");
+              foreach(var l in parserException.Message.Split(Environment.NewLine))
+              {
+                writer.WriteLine(l);
+              }
+              writer.WriteLine("");
+            }
+            else
+            {
+              writer.WriteLine("Parsing completed");
+              writer.WriteLine("Syntax Tree:");
+              syntaxTree.WriteTree(writer);
+              writer.WriteLine("");
+            }
           }
+        }
+
+        if (parserException != null)
+        {
+          return;
         }
 
         var compiler = new Compiler(syntaxTree);
@@ -94,7 +121,10 @@ namespace LunaCompiler
             if (compilerException != null)
             {
               writer.WriteLine("Compile failed:");
-              writer.WriteLine(compilerException.Message);
+              foreach(var l in compilerException.Message.Split(Environment.NewLine))
+              {
+                writer.WriteLine(l);
+              }
               writer.WriteLine("");
             }
             else

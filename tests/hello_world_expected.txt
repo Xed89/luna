@@ -14,7 +14,7 @@ TypeDeclaration 'HelloWorld'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    ExpressionSyntax 'Hello World!'
+                    ExpressionLiteralSyntax 'Hello World!'
 
 Compiled module:
 Module hello_world
