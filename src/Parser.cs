@@ -287,6 +287,12 @@ namespace LunaCompiler
         var literal = Current();
         return new ExpressionLiteralSyntax(literal);
       }
+      else if(Accept(TokenType.OpenRoundParenthesis))
+      {
+        var expr = ParseExpression();
+        Expect(TokenType.CloseRoundParenthesis);
+        return new ExpressionParenthesizedSyntax(expr);
+      }
       else
       {
         return null;

@@ -280,6 +280,11 @@ namespace LunaCompiler
                                    CompileExpression(expressionBinOpSyntax.leftExpressionSyntax),
                                    CompileExpression(expressionBinOpSyntax.rightExpressionSyntax));
       }
+      else if (expressionSyntax.GetType() == typeof (ExpressionParenthesizedSyntax))
+      {
+        var expressionParenthesizedSyntax = (ExpressionParenthesizedSyntax)expressionSyntax;
+        return new ExpressionParenthesized(CompileExpression(expressionParenthesizedSyntax.expression));
+      }
       else if (expressionSyntax.GetType() == typeof (ExpressionLiteralSyntax))
       {
         var expressionLiteralSyntax = (ExpressionLiteralSyntax)expressionSyntax;

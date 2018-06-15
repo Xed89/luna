@@ -151,6 +151,13 @@ namespace LunaCompiler
         writer.Write($" {expressionBinOp.op.value} ");
         GenerateExpression(expressionBinOp.rightExpr);
       }
+      else if (expression.GetType() == typeof (ExpressionParenthesized))
+      {
+        var expressionParenthesized = (ExpressionParenthesized)expression;
+        writer.Write("(");
+        GenerateExpression(expressionParenthesized.expression);
+        writer.Write(")");
+      }
       else if (expression.GetType() == typeof (ExpressionLiteral))
       {
         var expressionLiteral = (ExpressionLiteral)expression;

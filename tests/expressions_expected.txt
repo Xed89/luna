@@ -21,6 +21,21 @@ TypeDeclaration 'Program'
                     right: 
                       ExpressionLiteralSyntax '8'
         [1]: 
+          DeclarationStatementSyntax
+            let n2
+              ExpressionBinOpSyntax
+                Op: '*'
+                left: 
+                  ExpressionParenthesizedSyntax
+                    ExpressionBinOpSyntax
+                      Op: '+'
+                      left: 
+                        ExpressionLiteralSyntax '1'
+                      right: 
+                        ExpressionLiteralSyntax '5'
+                right: 
+                  ExpressionLiteralSyntax '8'
+        [2]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
@@ -28,14 +43,17 @@ TypeDeclaration 'Program'
               [1]: 
                 VariableOrCall 'writeLine'
                   [0]: 
-                    ExpressionLiteralSyntax 'n1: %i'
+                    ExpressionLiteralSyntax 'n1: %i, n2: %i'
                   [1]: 
                     ExpressionLiteralSyntax 'n1'
+                  [2]: 
+                    ExpressionLiteralSyntax 'n2'
 
 Compiled module:
 Module expressions
   Type Program
     Function main()
+      LunaCompiler.DeclarationStatement
       LunaCompiler.DeclarationStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
   String constants
@@ -58,7 +76,8 @@ class Program {
 public:
   static void main() {
     int n1 = 1 + 5 * 8;
-    Console::writeLine("n1: %i", n1);
+    int n2 = (1 + 5) * 8;
+    Console::writeLine("n1: %i, n2: %i", n1, n2);
   }
 };
 int main() {
@@ -66,4 +85,4 @@ int main() {
 }
 
 Program output:
-n1: 41
+n1: 41, n2: 48

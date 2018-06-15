@@ -220,6 +220,17 @@ namespace LunaCompiler
     public Type Type => leftExpr.Type;
   }
 
+  class ExpressionParenthesized : IExpression
+  {
+    public readonly IExpression expression;
+    public ExpressionParenthesized(IExpression expression)
+    {
+      this.expression = expression;
+    }
+
+    public Type Type => expression.Type;
+  }
+
   class ExpressionLiteral: IExpression
   {
     public readonly Token literal;

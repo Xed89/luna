@@ -260,7 +260,6 @@ namespace LunaCompiler
     }
   }
 
-  /*
   class ExpressionParenthesizedSyntax : SyntaxNode, IExpressionSyntax
   {
     public readonly IExpressionSyntax expression;
@@ -277,7 +276,6 @@ namespace LunaCompiler
       writer.Indent -= 1;
     }
   }
-  */
 
   class ExpressionLiteralSyntax : SyntaxNode, IExpressionSyntax
   {
