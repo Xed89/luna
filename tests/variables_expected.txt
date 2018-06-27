@@ -28,11 +28,17 @@ TypeDeclaration 'Program'
                   [0]: 
                     ExpressionLiteralSyntax 'n1: %i, n2: %i, s1: %s'
                   [1]: 
-                    ExpressionLiteralSyntax 'n1'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n1'
                   [2]: 
-                    ExpressionLiteralSyntax 'n2'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n2'
                   [3]: 
-                    ExpressionLiteralSyntax 's1'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 's1'
         [4]: 
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
@@ -55,11 +61,17 @@ TypeDeclaration 'Program'
                   [0]: 
                     ExpressionLiteralSyntax 'n1: %i, n2: %i, s1: %s'
                   [1]: 
-                    ExpressionLiteralSyntax 'n1'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n1'
                   [2]: 
-                    ExpressionLiteralSyntax 'n2'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n2'
                   [3]: 
-                    ExpressionLiteralSyntax 's1'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 's1'
 
 Compiled module:
 Module variables
@@ -72,7 +84,6 @@ Module variables
       LunaCompiler.VarOrCallChainMaybeAssignStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
-  String constants
 
 Generated Cpp code:
 #include "stdio.h"

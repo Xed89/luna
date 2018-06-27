@@ -9,14 +9,11 @@ namespace LunaCompiler
   {
     public readonly string name;
     public readonly IReadOnlyList<Type> types;
-    public readonly Dictionary<String, String> stringConstants;
     public Module(string name,
-                  IReadOnlyList<Type> types,
-                  Dictionary<String, String> stringConstants)
+                  IReadOnlyList<Type> types)
     {
       this.name = name;
       this.types = types;
-      this.stringConstants = stringConstants;
     }
 
     public Function FindEntryPoint()
@@ -38,14 +35,6 @@ namespace LunaCompiler
       {
         type.Write(writer);
       }
-
-      writer.WriteLine($"String constants");
-      writer.Indent += 1;
-      foreach (var kvp in stringConstants)
-      {
-        writer.WriteLine($"{kvp.Key} = \"{kvp.Value}\"");
-      }
-      writer.Indent -= 1;
 
       writer.Indent -= 1;
     }
@@ -99,30 +88,41 @@ namespace LunaCompiler
     public readonly Type type;
     public readonly bool isStatic;
     public readonly String name;
+    public readonly List<FunctionArg> arguments;
     public readonly Type returnType;
     public readonly List<Statement> statements;
-    public Function(Type type, bool isStatic, String name, Type returnType, List<Statement> statements)
+    public Function(Type type, bool isStatic, String name, List<FunctionArg> arguments, Type returnType)
     {
       this.type = type;
       this.isStatic = isStatic;
       this.name = name;
+      this.arguments = arguments;
       this.returnType = returnType;
-      this.statements = statements;
+      this.statements = new List<Statement>();
     }
 
     public String Name => name;
-    public Type Type => type;
+    public Type Type => returnType;
 
     public void Write(IndentedTextWriter writer)
     {
+      writer.Write($"Function {name}(");
+      var first = true;
+      foreach(var arg in arguments)
+      {
+        if (!first)
+          writer.Write($", ");
+        first = false;
+        
+        writer.Write($"{arg.name}: {arg.type.name}");
+      }
+      writer.Write(")");
       if (returnType != null)
       {
-        writer.WriteLine($"Function {name}(): {returnType.name}");
+        writer.Write($": {returnType.name}");
       }
-      else
-      {
-        writer.WriteLine($"Function {name}()");
-      }
+      writer.WriteLine("");
+
       writer.Indent += 1;
 
       for (int i = 0; i < statements.Count; i++)
@@ -130,6 +130,20 @@ namespace LunaCompiler
 
       writer.Indent -= 1;
     }
+  }
+
+  class FunctionArg: ISymbol
+  {
+    public readonly String name;
+    public readonly Type type;
+    public FunctionArg(String name, Type type)
+    {
+      this.name = name;
+      this.type = type;
+    }
+
+    public String Name => name;
+    public Type Type => type;
   }
 
   abstract class Statement
@@ -165,7 +179,7 @@ namespace LunaCompiler
     public Type Type => type;
   }
 
-  class VarOrCallChain
+  class VarOrCallChain: IExpression
   {
     /*
     Grammar:
@@ -186,6 +200,9 @@ namespace LunaCompiler
     {
       this.varOrCalls = varOrCall;
     }
+
+    // The varOrCall chain has the same type of the last symbol accessed or called
+    public Type Type => varOrCalls[varOrCalls.Count - 1].symbolToAccessOrCall.Type;
   }
 
   class VarOrCall
@@ -196,6 +213,15 @@ namespace LunaCompiler
     {
       this.symbolToAccessOrCall = symbolToAccessOrCall;
       this.argumentExpressions = argumentExpressions;
+    }
+  }
+
+  class ReturnStatement : Statement
+  {
+    public readonly IExpression value;
+    public ReturnStatement(IExpression value)
+    {
+      this.value = value;
     }
   }
 

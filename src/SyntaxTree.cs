@@ -64,12 +64,14 @@ namespace LunaCompiler
   {
     public readonly bool isStatic;
     public readonly Token nameToken;
+    public readonly List<FunctionArgSyntax> argumentSyntaxes;
     public readonly TypeSyntax typeSyntax;
     public readonly List<StatementSyntax> statementSyntaxes;
-    public FunctionSyntax(bool isStatic, Token identifierToken, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
+    public FunctionSyntax(bool isStatic, Token identifierToken, List<FunctionArgSyntax> argumentSyntaxes, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
     {
       this.isStatic = isStatic;
       this.nameToken = identifierToken;
+      this.argumentSyntaxes = argumentSyntaxes;
       this.typeSyntax = typeSyntax;
       this.statementSyntaxes = statementSyntaxes;
     }
@@ -79,6 +81,22 @@ namespace LunaCompiler
       var staticKeyword = isStatic ? " (static)" : "";
       writer.WriteLine($"Function '{nameToken.value}'{staticKeyword}");
       writer.Indent += 1;
+
+      if (argumentSyntaxes.Count > 0)
+      {
+        writer.WriteLine("arguments:");
+        writer.Indent += 1;
+        for (var i = 0; i < argumentSyntaxes.Count; i++)
+        {
+          writer.Indent += 1;
+          writer.WriteLine($"[{i}]: ");
+          writer.Indent += 1;
+          argumentSyntaxes[i].WriteTree(writer);
+          writer.Indent -= 1;
+          writer.Indent -= 1;
+        }
+        writer.Indent -= 1;
+      }
 
       writer.WriteLine("type:");
       writer.Indent += 1;
@@ -98,6 +116,33 @@ namespace LunaCompiler
         writer.Indent -= 1;
         writer.Indent -= 1;
       }
+
+      writer.Indent -= 1;
+    }
+  }
+
+  class FunctionArgSyntax : SyntaxNode
+  {
+    public readonly Token nameToken;
+    public readonly TypeSyntax typeSyntax;
+    public FunctionArgSyntax(Token nameToken, TypeSyntax typeSyntax)
+    {
+      this.nameToken = nameToken;
+      this.typeSyntax = typeSyntax;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine($"FunctionArg '{nameToken.value}'");
+      writer.Indent += 1;
+
+      writer.WriteLine("type:");
+      writer.Indent += 1;
+      if (typeSyntax != null)
+        typeSyntax.WriteTree(writer);
+      else
+        writer.WriteLine("null");
+      writer.Indent -= 1;
 
       writer.Indent -= 1;
     }
@@ -220,6 +265,28 @@ namespace LunaCompiler
     }
   }
 
+  class ReturnStatementSyntax : StatementSyntax
+  {
+    public readonly IExpressionSyntax value;
+    public ReturnStatementSyntax(IExpressionSyntax value)
+    {
+      this.value = value;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine(GetType().Name);
+      writer.Indent += 1;
+
+      writer.WriteLine($"value:");
+      writer.Indent += 1;
+      value.WriteTree(writer);
+      writer.Indent -= 1;
+
+      writer.Indent -= 1;
+    }
+  }
+
   interface IExpressionSyntax
   {
     void WriteTree(IndentedTextWriter writer);
@@ -243,9 +310,9 @@ namespace LunaCompiler
     {
       writer.WriteLine($"{GetType().Name}");
       writer.Indent += 1;
-      
+
       writer.WriteLine($"Op: '{op.value}'");
-      
+
       writer.WriteLine($"left: ");
       writer.Indent += 1;
       leftExpressionSyntax.WriteTree(writer);

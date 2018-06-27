@@ -21,7 +21,6 @@ Module hello_world
   Type HelloWorld
     Function main()
       LunaCompiler.VarOrCallChainMaybeAssignStatement
-  String constants
 
 Generated Cpp code:
 #include "stdio.h"

@@ -95,11 +95,17 @@ TypeDeclaration 'Program'
                   [0]: 
                     ExpressionLiteralSyntax 'n1: %i, n2: %i, n3: %i'
                   [1]: 
-                    ExpressionLiteralSyntax 'n1'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n1'
                   [2]: 
-                    ExpressionLiteralSyntax 'n2'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n2'
                   [3]: 
-                    ExpressionLiteralSyntax 'n3'
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n3'
 
 Compiled module:
 Module expressions
@@ -109,7 +115,6 @@ Module expressions
       LunaCompiler.DeclarationStatement
       LunaCompiler.DeclarationStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
-  String constants
 
 Generated Cpp code:
 #include "stdio.h"

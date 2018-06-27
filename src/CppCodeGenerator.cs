@@ -31,7 +31,7 @@ namespace LunaCompiler
       writer.WriteLine($"}};");
       writer.WriteLine($"");
 
-      foreach(var type in module.types)
+      foreach (var type in module.types)
       {
         Generate(type);
       }
@@ -51,7 +51,7 @@ namespace LunaCompiler
       writer.WriteLine($"class {type.name} {{");
       writer.WriteLine($"public:");
       writer.Indent += 1;
-      foreach(var function in type.functions)
+      foreach (var function in type.functions)
       {
         Generate(function);
       }
@@ -62,50 +62,26 @@ namespace LunaCompiler
     public void Generate(Function function)
     {
       var returnTypeStr = function.returnType == null ? "void" : function.returnType.name;
-      writer.WriteLine($"static {returnTypeStr} {function.name}() {{");
+      var argStrs = from x in function.arguments
+                    select $"{x.type.name} {x.name}";
+      var argStr = String.Join(", ", argStrs);
+      writer.WriteLine($"static {returnTypeStr} {function.name}({argStr}) {{");
       writer.Indent += 1;
-    
-      foreach(var statement in function.statements)
+
+      foreach (var statement in function.statements)
       {
         if (statement.GetType() == typeof(VarOrCallChainMaybeAssignStatement))
         {
           var varOrCallChainMaybeAssignStatement = (VarOrCallChainMaybeAssignStatement)statement;
           var varOrCallChain = varOrCallChainMaybeAssignStatement.varOrCallChain;
-          foreach(var varOrCall in varOrCallChain.varOrCalls)
-          {
-            if (varOrCall.symbolToAccessOrCall.GetType() == typeof(Function))
-            {
-              var funToCall = (Function)varOrCall.symbolToAccessOrCall;
-              writer.Write($"{funToCall.type.name}::{funToCall.name}(");
-              var isFirstArg = true;
-              foreach(var argExpr in varOrCall.argumentExpressions)
-              {
-                if (!isFirstArg)
-                {
-                  writer.Write(", ");
-                }
-                isFirstArg = false;
-                GenerateExpression(argExpr);
-              }
-              writer.Write($")");
-            }
-            else if (varOrCall.symbolToAccessOrCall.GetType() == typeof(DeclarationStatement))
-            {
-              var declarationStatement = (DeclarationStatement)varOrCall.symbolToAccessOrCall;
-              writer.Write($"{declarationStatement.name}");
-            } 
-            else
-            {
-              throw new ArgumentException($"Unknown symbol type: {varOrCall.symbolToAccessOrCall.GetType().Name}");
-            }
-          }
+          GenerateVarOrCallChain(varOrCallChain);
 
           if (varOrCallChainMaybeAssignStatement.valueToAssignExpression != null)
           {
             writer.Write($" = ");
             GenerateExpression(varOrCallChainMaybeAssignStatement.valueToAssignExpression);
           }
-        } 
+        }
         else if (statement.GetType() == typeof(DeclarationStatement))
         {
           var declarationStatement = (DeclarationStatement)statement;
@@ -131,6 +107,13 @@ namespace LunaCompiler
             GenerateExpression(declarationStatement.initializer);
           }
         }
+        else if (statement.GetType() == typeof(ReturnStatement))
+        {
+          var returnStatement = (ReturnStatement)statement;
+          
+          writer.Write($"return ");
+          GenerateExpression(returnStatement.value);
+        }
         else
         {
           throw new ArgumentException($"Unknown statement type: {statement.GetType().Name}");
@@ -144,21 +127,21 @@ namespace LunaCompiler
 
     private void GenerateExpression(IExpression expression)
     {
-      if (expression.GetType() == typeof (ExpressionBinOp))
+      if (expression.GetType() == typeof(ExpressionBinOp))
       {
         var expressionBinOp = (ExpressionBinOp)expression;
         GenerateExpression(expressionBinOp.leftExpr);
         writer.Write($" {expressionBinOp.op.value} ");
         GenerateExpression(expressionBinOp.rightExpr);
       }
-      else if (expression.GetType() == typeof (ExpressionParenthesized))
+      else if (expression.GetType() == typeof(ExpressionParenthesized))
       {
         var expressionParenthesized = (ExpressionParenthesized)expression;
         writer.Write("(");
         GenerateExpression(expressionParenthesized.expression);
         writer.Write(")");
       }
-      else if (expression.GetType() == typeof (ExpressionLiteral))
+      else if (expression.GetType() == typeof(ExpressionLiteral))
       {
         var expressionLiteral = (ExpressionLiteral)expression;
         //Assume literal for now
@@ -171,9 +154,51 @@ namespace LunaCompiler
           writer.Write(expressionLiteral.literal.value);
         }
       }
+      else if (expression.GetType() == typeof(VarOrCallChain))
+      {
+        var varOrCallChain = (VarOrCallChain)expression;
+        GenerateVarOrCallChain(varOrCallChain);
+      }
       else
       {
         throw new ArgumentException($"Could not determine type of expression");
+      }
+    }
+
+    private void GenerateVarOrCallChain(VarOrCallChain varOrCallChain)
+    {
+      foreach (var varOrCall in varOrCallChain.varOrCalls)
+      {
+        if (varOrCall.symbolToAccessOrCall.GetType() == typeof(Function))
+        {
+          var funToCall = (Function)varOrCall.symbolToAccessOrCall;
+          writer.Write($"{funToCall.type.name}::{funToCall.name}(");
+          var isFirstArg = true;
+          foreach (var argExpr in varOrCall.argumentExpressions)
+          {
+            if (!isFirstArg)
+            {
+              writer.Write(", ");
+            }
+            isFirstArg = false;
+            GenerateExpression(argExpr);
+          }
+          writer.Write($")");
+        }
+        else if (varOrCall.symbolToAccessOrCall.GetType() == typeof(DeclarationStatement))
+        {
+          var declarationStatement = (DeclarationStatement)varOrCall.symbolToAccessOrCall;
+          writer.Write($"{declarationStatement.name}");
+        }
+        else if (varOrCall.symbolToAccessOrCall.GetType() == typeof(FunctionArg))
+        {
+          var functionArg = (FunctionArg)varOrCall.symbolToAccessOrCall;
+          writer.Write($"{functionArg.name}");
+        }
+        else
+        {
+          throw new ArgumentException($"Unknown symbol type: {varOrCall.symbolToAccessOrCall.GetType().Name}");
+        }
       }
     }
   }

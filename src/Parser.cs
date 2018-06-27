@@ -7,7 +7,7 @@ namespace LunaCompiler
   {
     private readonly String moduleName;
     private readonly Tokenizer tokenizer;
-    public Parser(String moduleName, 
+    public Parser(String moduleName,
                   Tokenizer tokenizer)
     {
       this.moduleName = moduleName;
@@ -77,15 +77,29 @@ namespace LunaCompiler
       NestingLevelIncrease();
       var functions = new List<FunctionSyntax>();
       // Now we have the function statements!
-      while (AcceptIndentation(nestingDepth))
+      while (HasNextToken())
       {
-        if (AcceptKeyword("fun"))
+        // Skip newlines after type and between funs
+        // TODO skip also indentation followed by newline even if indentation does not match current level
+        if (Accept(TokenType.NewLine))
         {
-          functions.Add(ParseFunction());
+          continue;
+        }
+
+        if (AcceptIndentation(nestingDepth))
+        {
+          if (AcceptKeyword("fun"))
+          {
+            functions.Add(ParseFunction());
+          }
+          else
+          {
+            throw CreateException($"Unexpected token {nextToken.ToString()}");
+          }
         }
         else
         {
-          throw CreateException($"Unexpected token {nextToken.ToString()}");
+          break;
         }
       }
 
@@ -99,15 +113,27 @@ namespace LunaCompiler
       Expect(TokenType.Identifier);
       var identifierToken = Current();
       Expect(TokenType.OpenRoundParenthesis);
-      Expect(TokenType.CloseRoundParenthesis);
+
+      // Parse arguments
+      var args = new List<FunctionArgSyntax>();
+      var isFirst = true;
+      while (!Accept(TokenType.CloseRoundParenthesis))
+      {
+        if (!isFirst)
+          Expect(TokenType.Comma);
+        isFirst = false;
+
+        Expect(TokenType.Identifier);
+        var argNameToken = Current();
+        Expect(TokenType.Colon);
+        var argType = ParseType();
+        args.Add(new FunctionArgSyntax(argNameToken, argType));
+      }
 
       TypeSyntax typeSyntax = null;
       if (Accept(TokenType.Colon))
       {
-        // TODO
-        Expect(TokenType.Identifier);
-        var typeToken = Current();
-        typeSyntax = new TypeSyntax(typeToken);
+        typeSyntax = ParseType();
       }
       Expect(TokenType.NewLine);
 
@@ -123,8 +149,17 @@ namespace LunaCompiler
           Expect(TokenType.NewLine);
         }
       }
+      NestingLevelDecrease();
 
-      return new FunctionSyntax(isStatic, identifierToken, typeSyntax, statements);
+      return new FunctionSyntax(isStatic, identifierToken, args, typeSyntax, statements);
+    }
+
+    private TypeSyntax ParseType()
+    {
+      // TODO
+      Expect(TokenType.Identifier);
+      var typeToken = Current();
+      return new TypeSyntax(typeToken);
     }
 
     private StatementSyntax ParseStatement()
@@ -137,7 +172,11 @@ namespace LunaCompiler
       {
         return ParseDeclarationStatement(isVar: true);
       }
-      else 
+      else if (AcceptKeyword("return"))
+      {
+        return ParseReturnStatement();
+      }
+      else
       {
         return ParseVarOrCallChainMaybeAssignStatement();
       }
@@ -169,6 +208,12 @@ namespace LunaCompiler
       return new DeclarationStatementSyntax(isVar, identifierToken, initializer);
     }
 
+    private ReturnStatementSyntax ParseReturnStatement()
+    {
+      var value = ParseExpression();
+      return new ReturnStatementSyntax(value);
+    }
+
     private VarOrCallChainSyntax ParseVarOrCallChain()
     {
       var varOrCallSyntaxes = new List<VarOrCallSyntax>();
@@ -190,7 +235,7 @@ namespace LunaCompiler
         // Loop until we find a close parenthesis
         var isFirstArg = true;
         argumentExpressionSyntaxes = new List<IExpressionSyntax>();
-        
+
         while (!Accept(TokenType.CloseRoundParenthesis))
         {
           if (!isFirstArg)
@@ -201,7 +246,7 @@ namespace LunaCompiler
           argumentExpressionSyntaxes.Add(ParseExpression());
         }
       }
-      
+
       return new VarOrCallSyntax(identifier, argumentExpressionSyntaxes);
     }
 
@@ -220,7 +265,7 @@ namespace LunaCompiler
             ops.Add(Current());
           else
             break;
-        } 
+        }
 
         facts.Add(ParseExpressionFacts());
       }
@@ -243,7 +288,7 @@ namespace LunaCompiler
             ops.Add(Current());
           else
             break;
-        } 
+        }
 
         var expr = ParseExpressionTerminalsOrNull();
         if (expr == null)
@@ -259,12 +304,12 @@ namespace LunaCompiler
       if (exprs.Count == 1)
         return exprs[0];
 
-      IExpressionSyntax left = new ExpressionBinOpSyntax(ops[0], 
-                                                         exprs[0], 
+      IExpressionSyntax left = new ExpressionBinOpSyntax(ops[0],
+                                                         exprs[0],
                                                          exprs[1]);
-      for(var i= 2; i< exprs.Count; i++)
+      for (var i = 2; i < exprs.Count; i++)
       {
-        left = new ExpressionBinOpSyntax(ops[i-1], left, exprs[i]);
+        left = new ExpressionBinOpSyntax(ops[i - 1], left, exprs[i]);
       }
       return left;
     }
@@ -298,13 +343,11 @@ namespace LunaCompiler
         var literal = Current();
         return new ExpressionLiteralSyntax(literal);
       }
-      else if (Accept(TokenType.Identifier))
+      else if (Peek(TokenType.Identifier))
       {
-        //TODO memberAccessExpression
-        var literal = Current();
-        return new ExpressionLiteralSyntax(literal);
+        return ParseVarOrCallChain();
       }
-      else if(Accept(TokenType.OpenRoundParenthesis))
+      else if (Accept(TokenType.OpenRoundParenthesis))
       {
         var expr = ParseExpression();
         Expect(TokenType.CloseRoundParenthesis);
@@ -328,12 +371,20 @@ namespace LunaCompiler
 
     private bool Accept(TokenType tokenType, String value = null)
     {
+      if (!Peek(tokenType, value))
+        return false;
+
+      NextToken();
+      return true;
+    }
+
+    private bool Peek(TokenType tokenType, String value = null)
+    {
       if ((nextToken == null) || (nextToken.type != tokenType) || (value != null && nextToken.value != value))
       {
         return false;
       }
 
-      NextToken();
       return true;
     }
 

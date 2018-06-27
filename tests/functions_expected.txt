@@ -1,0 +1,98 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main' (static)
+      type:
+        null
+      statements:
+        [0]: 
+          DeclarationStatementSyntax
+            let n1
+              VarOrCallChainSyntax
+                [0]: 
+                  VariableOrCall 'getSum'
+                    [0]: 
+                      ExpressionLiteralSyntax '5'
+                    [1]: 
+                      ExpressionLiteralSyntax '7'
+        [1]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionLiteralSyntax 'n1: %i'
+                  [1]: 
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n1'
+  [1]: 
+    Function 'getSum' (static)
+      arguments:
+          [0]: 
+            FunctionArg 'a'
+              type:
+                Type 'int'
+          [1]: 
+            FunctionArg 'b'
+              type:
+                Type 'int'
+      type:
+        Type 'int'
+      statements:
+        [0]: 
+          ReturnStatementSyntax
+            value:
+              ExpressionBinOpSyntax
+                Op: '+'
+                left: 
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'a'
+                right: 
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'b'
+
+Compiled module:
+Module functions
+  Type Program
+    Function main()
+      LunaCompiler.DeclarationStatement
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
+    Function getSum(a: int, b: int): int
+      LunaCompiler.ReturnStatement
+
+Generated Cpp code:
+#include "stdio.h"
+#include "stdarg.h"
+class Console {
+public:
+  static void writeLine(const char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vfprintf(stdout, msg, argp);
+    fprintf(stdout, "\n");
+    va_end(argp);
+  }
+};
+
+class Program {
+public:
+  static void main() {
+    int n1 = Program::getSum(5, 7);
+    Console::writeLine("n1: %i", n1);
+  }
+  static int getSum(int a, int b) {
+    return a + b;
+  }
+};
+int main() {
+  Program::main();
+}
+
+Program output:
+n1: 12
