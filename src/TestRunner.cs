@@ -3,6 +3,7 @@ using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace LunaCompiler
 {
@@ -12,6 +13,13 @@ namespace LunaCompiler
     public TestRunner(string path)
     {
       this.path = path;
+    }
+
+    private struct TestTimes
+    {
+      public Int64 parseTimeMicrosec;
+      public Int64 compileTimeMicrosec;
+      public Int64 cppGenTimeMicrosec;
     }
 
     private Stopwatch stopWatch;
@@ -31,10 +39,11 @@ namespace LunaCompiler
         // Delete the actual output file from the previous run
         System.IO.File.Delete(actualOutputFile);
 
+        var times = new TestTimes();
         stopWatch.Restart();
         try
         {
-          RunOneTest(testSourceFile, actualOutputFile);
+          RunOneTest(testSourceFile, actualOutputFile, ref times);
         }
         catch (Exception ex)
         {
@@ -45,18 +54,20 @@ namespace LunaCompiler
         var durationMillisec = stopWatch.Elapsed.TotalMilliseconds;
 
         var isSuccessful = AreFilesEqual(expectedOutputFile, actualOutputFile);
-        ConsolePrintTestCompleted(testName, isSuccessful, durationMillisec);
+        ConsolePrintTestCompleted(testName, isSuccessful, durationMillisec, ref times);
       }
     }
 
-    private void RunOneTest(string testSourceFile, string outputFile)
+    private void RunOneTest(string testSourceFile, string outputFile, ref TestTimes times)
     {
+      var watch = new QueryPerfCounter();
       using (var reader = new System.IO.StreamReader(System.IO.File.OpenRead(testSourceFile)))
       {
-        
+
         var fileName = System.IO.Path.GetFileNameWithoutExtension(testSourceFile);
         var tokenizer = new Tokenizer(reader);
 
+        watch.Start();
         CompilerException parserException;
         SyntaxTree syntaxTree;
         try
@@ -64,11 +75,14 @@ namespace LunaCompiler
           var parser = new Parser(fileName, tokenizer);
           syntaxTree = parser.Parse();
           parserException = null;
-        } catch (CompilerException ex)
+        }
+        catch (CompilerException ex)
         {
           parserException = ex;
           syntaxTree = null;
         }
+        watch.Stop();
+        times.parseTimeMicrosec = watch.DurationMicrosec;
 
         // Write parser output
         using (var sw = new StreamWriter(outputFile, append: true))
@@ -78,7 +92,7 @@ namespace LunaCompiler
             if (parserException != null)
             {
               writer.WriteLine("Parsing failed:");
-              foreach(var l in parserException.Message.Split(Environment.NewLine))
+              foreach (var l in parserException.Message.Split(Environment.NewLine))
               {
                 writer.WriteLine(l);
               }
@@ -99,6 +113,7 @@ namespace LunaCompiler
           return;
         }
 
+        watch.Start();
         var compiler = new Compiler(syntaxTree);
         Module module;
         CompilerException compilerException;
@@ -112,6 +127,8 @@ namespace LunaCompiler
           compilerException = ex;
           module = null;
         }
+        watch.Stop();
+        times.compileTimeMicrosec = watch.DurationMicrosec;
 
         // Write compiler output
         using (var sw = new StreamWriter(outputFile, append: true))
@@ -121,7 +138,7 @@ namespace LunaCompiler
             if (compilerException != null)
             {
               writer.WriteLine("Compile failed:");
-              foreach(var l in compilerException.Message.Split(Environment.NewLine))
+              foreach (var l in compilerException.Message.Split(Environment.NewLine))
               {
                 writer.WriteLine(l);
               }
@@ -141,6 +158,7 @@ namespace LunaCompiler
           return;
         }
 
+        watch.Start();
         string cppCode;
         using (var sw = new StringWriter())
         {
@@ -151,6 +169,8 @@ namespace LunaCompiler
             cppCode = sw.ToString();
           }
         }
+        watch.Stop();
+        times.cppGenTimeMicrosec = watch.DurationMicrosec;
 
         // Save the code to a file, compile it and run
         string programOutput = CompileAndRunCppCodeReturnOutput(cppCode);
@@ -188,7 +208,7 @@ namespace LunaCompiler
       System.IO.File.WriteAllText(tmpCppSourceFile, cppCode);
 
       var batCompileLines = new List<string>();
-      batCompileLines.Add($"call \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\Common7\\Tools\\VsDevCmd.bat\"");
+      batCompileLines.Add($"call \"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\Common7\\Tools\\VsDevCmd.bat\"");
       batCompileLines.Add($"cd \"{tempPath}\"");
       batCompileLines.Add($"cl tmpCppSource.cpp");
       //batCompileLines.Add("pause");
@@ -201,6 +221,7 @@ namespace LunaCompiler
       //pCompile.StartInfo.Environment["INCLUDE"] =  @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.14.26428\include;C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.1\include\um;C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\ucrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\shared;C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\um;C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\winrt;C:\Program Files (x86)\Windows Kits\10\include\10.0.17134.0\cppwinrt";
       pCompile.StartInfo.FileName = tmpBatCompileFile;
       pCompile.StartInfo.RedirectStandardOutput = true;
+      pCompile.StartInfo.RedirectStandardError = true;
       pCompile.Start();
       var pCompileOutput = pCompile.StandardOutput.ReadToEnd();
       if (pCompile.ExitCode != 0)
@@ -214,7 +235,7 @@ namespace LunaCompiler
       return pRun.StandardOutput.ReadToEnd();
     }
 
-    private void ConsolePrintTestCompleted(string testName, bool success, double durationMillisec)
+    private void ConsolePrintTestCompleted(string testName, bool success, double durationMillisec, ref TestTimes times)
     {
       var prevColor = Console.ForegroundColor;
       if (success)
@@ -229,6 +250,10 @@ namespace LunaCompiler
       }
       Console.ForegroundColor = prevColor;
       Console.WriteLine($" {testName} ({durationMillisec:0.00} ms)");
+      Console.WriteLine($"  Parse time: {times.parseTimeMicrosec/1000.0:0.00} ms");
+      Console.WriteLine($"  Compile time: {times.compileTimeMicrosec/1000.0:0.00} ms");
+      Console.WriteLine($"  Cpp generation time: {times.cppGenTimeMicrosec/1000.0:0.00} ms");
+      Console.WriteLine();
     }
 
     private IEnumerable<String> CollectTestSourceFiles()
@@ -250,6 +275,48 @@ namespace LunaCompiler
       }
 
       return true;
+    }
+  }
+
+  public class QueryPerfCounter
+  {
+    [DllImport("KERNEL32")]
+    private static extern bool QueryPerformanceCounter(out long lpPerformanceCount);
+    [DllImport("Kernel32.dll")]
+    private static extern bool QueryPerformanceFrequency(out long lpFrequency);
+
+    private long start;
+    private long stop;
+    private long frequency;
+    double multiplier = 1.0e6;  // usecs / sec
+
+    public QueryPerfCounter()
+    {
+      QueryPerformanceFrequency(out frequency);
+    }
+
+    public void Start()
+    {
+      QueryPerformanceCounter(out start);
+    }
+
+    public void Stop()
+    {
+      QueryPerformanceCounter(out stop);
+    }
+
+    public Int64 DurationMicrosec
+    {
+      get {
+        return stop - start;
+      }
+    }
+
+    public double DurationSec
+    {
+      get {
+        return ((stop - start) * multiplier) / frequency;
+      }
     }
   }
 }

@@ -258,7 +258,7 @@ namespace LunaCompiler
       {
         if (facts.Count > 0)
         {
-          // It's not the first, so to continue the fact chain we need to find a * or /
+          // It's not the first, so to continue the fact chain we need to find a + or -
           if (Accept(TokenType.Plus))
             ops.Add(Current());
           else if (Accept(TokenType.Minus))
