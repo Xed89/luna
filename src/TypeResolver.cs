@@ -6,8 +6,15 @@ namespace LunaCompiler
 {
   class TypeResolver
   {
+    private readonly Type stringType;
+    private readonly Type intType;
+    private readonly Type ConsoleType;
     public TypeResolver()
     {
+      stringType = new Type("string");
+      intType = new Type("int");
+      ConsoleType = new Type("Console");
+      ConsoleType.AddFunction(new Function(ConsoleType, true, "writeLine", new List<FunctionArg>(), null));
     }
 
     public Type ResolveType(TypeSyntax typeSyntax)
@@ -29,14 +36,9 @@ namespace LunaCompiler
       // Try with built-in types
       switch (name)
       {
-        case "int": return new Type(name);
-        case "string": return new Type(name);
-        case "Console":
-          {
-            var type = new Type(name);
-            type.AddFunction(new Function(type, true, "writeLine", new List<FunctionArg>(), null));
-            return type;
-          }
+        case "int": return intType;
+        case "string": return stringType;
+        case "Console": return ConsoleType;
       }
 
       return null;
