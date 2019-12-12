@@ -168,11 +168,15 @@ namespace LunaCompiler
 
     private void CompileFunctionStatement_ReturnStatement(ReturnStatementSyntax returnStatement, List<Statement> statements)
     {
-      IExpression value = CompileExpression(returnStatement.value);
-      
-      if (value.Type != function.returnType) 
+      IExpression value = null;
+
+      if (returnStatement.value != null)
       {
-        throw new CompilerException($"Function must return a value of type {function.returnType.name}, not {value.Type.name}");
+        value = CompileExpression(returnStatement.value);
+        if (value.Type != function.returnType) 
+        {
+          throw new CompilerException($"Function must return a value of type {function.returnType.name}, not {value.Type.name}");
+        }
       }
 
       statements.Add(new ReturnStatement(value));

@@ -1,7 +1,11 @@
 type Program
   fun main()
     let n1 = getSum(5, 7)
-    Console.writeLine("n1: %i", n1)
+    doWork(n1)
 
   fun getSum(a: int, b: int): int 
     return a + b
+
+  fun doWork(n1: int)
+    Console.writeLine("n1: %i", n1)
+    return

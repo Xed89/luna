@@ -209,7 +209,7 @@ namespace LunaCompiler
 
     private ReturnStatementSyntax ParseReturnStatement()
     {
-      var value = ParseExpression();
+      var value = ParseExpression(acceptEmpty: true);
       return new ReturnStatementSyntax(value);
     }
 
@@ -249,7 +249,7 @@ namespace LunaCompiler
       return new VarOrCallSyntax(identifier, argumentExpressionSyntaxes);
     }
 
-    private IExpressionSyntax ParseExpression()
+    private IExpressionSyntax ParseExpression(bool acceptEmpty = false)
     {
       var facts = new List<IExpressionSyntax>();
       var ops = new List<Token>();
@@ -266,13 +266,20 @@ namespace LunaCompiler
             break;
         }
 
-        facts.Add(ParseExpressionFacts());
+        var fact = ParseExpressionFacts(acceptEmpty);
+        if (fact == null) 
+        {
+          if (!acceptEmpty)
+            throw new CompilerException("No factor found is valid only when empty expression is accepted");
+          return null;
+        }
+        facts.Add(fact);
       }
 
       return BuildBinOpSamePrecedenceExprTree_LeftAssociative(facts, ops);
     }
 
-    private IExpressionSyntax ParseExpressionFacts()
+    private IExpressionSyntax ParseExpressionFacts(bool acceptEmpty)
     {
       var terminals = new List<IExpressionSyntax>();
       var ops = new List<Token>();
@@ -290,8 +297,15 @@ namespace LunaCompiler
         }
 
         var expr = ParseExpressionTerminalsOrNull();
-        if (expr == null)
-          throw CreateException("Expression expected");
+        if (expr == null) 
+        {
+          // If no terminal was alread matched and the caller allows for no expression
+          // then return null to signal no expression found
+          if (terminals.Count == 0 && acceptEmpty)
+            return null;
+          else
+            throw CreateException("Expression expected");
+        }
         terminals.Add(expr);
       }
 

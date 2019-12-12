@@ -275,10 +275,13 @@ namespace LunaCompiler
       writer.WriteLine(GetType().Name);
       writer.Indent += 1;
 
-      writer.WriteLine($"value:");
-      writer.Indent += 1;
-      value.WriteTree(writer);
-      writer.Indent -= 1;
+      if (value != null)
+      {
+        writer.WriteLine($"value:");
+        writer.Indent += 1;
+        value.WriteTree(writer);
+        writer.Indent -= 1;
+      }
 
       writer.Indent -= 1;
     }

@@ -20,12 +20,8 @@ TypeDeclaration 'Program'
           VarOrCallChainMaybeAssignStatementSyntax
             VarOrCallChainSyntax
               [0]: 
-                VariableOrCall 'Console'
-              [1]: 
-                VariableOrCall 'writeLine'
+                VariableOrCall 'doWork'
                   [0]: 
-                    ExpressionLiteralSyntax 'n1: %i'
-                  [1]: 
                     VarOrCallChainSyntax
                       [0]: 
                         VariableOrCall 'n1'
@@ -56,6 +52,31 @@ TypeDeclaration 'Program'
                   VarOrCallChainSyntax
                     [0]: 
                       VariableOrCall 'b'
+  [2]: 
+    Function 'doWork'
+      arguments:
+          [0]: 
+            FunctionArg 'n1'
+              type:
+                Type 'int'
+      type:
+        null
+      statements:
+        [0]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionLiteralSyntax 'n1: %i'
+                  [1]: 
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'n1'
+        [1]: 
+          ReturnStatementSyntax
 
 Compiled module:
 Module functions
@@ -64,6 +85,9 @@ Module functions
       LunaCompiler.DeclarationStatement
       LunaCompiler.VarOrCallChainMaybeAssignStatement
     Function getSum(a: int, b: int): int
+      LunaCompiler.ReturnStatement
+    Function doWork(n1: int)
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
       LunaCompiler.ReturnStatement
 
 Generated Cpp code:
@@ -84,10 +108,14 @@ class Program {
 public:
   static void main() {
     int n1 = Program::getSum(5, 7);
-    Console::writeLine("n1: %i", n1);
+    Program::doWork(n1);
   }
   static int getSum(int a, int b) {
     return a + b;
+  }
+  static void doWork(int n1) {
+    Console::writeLine("n1: %i", n1);
+    return;
   }
 };
 int main() {

@@ -112,8 +112,15 @@ namespace LunaCompiler
         {
           var returnStatement = (ReturnStatement)statement;
           
-          writer.Write($"return ");
-          GenerateExpression(returnStatement.value);
+          if (returnStatement.value != null)
+          {
+            writer.Write($"return ");
+            GenerateExpression(returnStatement.value);
+          } 
+          else
+          {
+            writer.Write($"return");
+          }
         }
         else
         {
