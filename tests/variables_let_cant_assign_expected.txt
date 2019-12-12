@@ -2,7 +2,7 @@ Parsing completed
 Syntax Tree:
 TypeDeclaration 'Program'
   [0]: 
-    Function 'main' (static)
+    Function 'main'
       type:
         null
       statements:

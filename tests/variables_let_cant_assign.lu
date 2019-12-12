@@ -1,4 +1,4 @@
 type Program
-  fun static main()
+  fun main()
     let n1 = 57
     n1 = 68

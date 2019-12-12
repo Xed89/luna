@@ -2,7 +2,7 @@ Parsing completed
 Syntax Tree:
 TypeDeclaration 'Program'
   [0]: 
-    Function 'main' (static)
+    Function 'main'
       type:
         null
       statements:
@@ -30,7 +30,7 @@ TypeDeclaration 'Program'
                       [0]: 
                         VariableOrCall 'n1'
   [1]: 
-    Function 'getSum' (static)
+    Function 'getSum'
       arguments:
           [0]: 
             FunctionArg 'a'

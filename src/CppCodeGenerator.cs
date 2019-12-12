@@ -65,7 +65,8 @@ namespace LunaCompiler
       var argStrs = from x in function.arguments
                     select $"{x.type.name} {x.name}";
       var argStr = String.Join(", ", argStrs);
-      writer.WriteLine($"static {returnTypeStr} {function.name}({argStr}) {{");
+      var staticStr = function.isStatic ? "static " : "";
+      writer.WriteLine($"{staticStr}{returnTypeStr} {function.name}({argStr}) {{");
       writer.Indent += 1;
 
       foreach (var statement in function.statements)

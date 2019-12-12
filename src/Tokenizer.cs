@@ -16,7 +16,7 @@ namespace LunaCompiler
       this.input = input;
       this.currLineTokens = new List<Token>();
       this.idxTokenCurrLine = 0;
-      keywords = new HashSet<string>() {"fun", "type", "static", "let", "var", "return"};
+      keywords = new HashSet<string>() {"fun", "type", "let", "var", "return"};
     }
 
     public Token GetNextTokenOrNull()

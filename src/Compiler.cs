@@ -102,8 +102,11 @@ namespace LunaCompiler
                                       typeResolver.ResolveType(arg.typeSyntax)));
       }
 
+      // TODO determine if the function is static analyzing the variable usage
+      // TODO do the same for pure
+      var isStatic = true;
       return new Function(type,
-                          functionSyntax.isStatic,
+                          isStatic,
                           functionSyntax.nameToken.value,
                           arguments,
                           returnType);

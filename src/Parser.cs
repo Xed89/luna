@@ -109,7 +109,6 @@ namespace LunaCompiler
     private FunctionSyntax ParseFunction()
     {
       var funToken = Current();
-      var isStatic = AcceptKeyword("static");
       Expect(TokenType.Identifier);
       var identifierToken = Current();
       Expect(TokenType.OpenRoundParenthesis);
@@ -151,7 +150,7 @@ namespace LunaCompiler
       }
       NestingLevelDecrease();
 
-      return new FunctionSyntax(isStatic, identifierToken, args, typeSyntax, statements);
+      return new FunctionSyntax(identifierToken, args, typeSyntax, statements);
     }
 
     private TypeSyntax ParseType()

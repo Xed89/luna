@@ -1,7 +1,7 @@
 type Program
-  fun static main()
+  fun main()
     let n1 = getSum(5, 7)
     Console.writeLine("n1: %i", n1)
 
-  fun static getSum(a: int, b: int): int
+  fun getSum(a: int, b: int): int 
     return a + b

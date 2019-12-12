@@ -1,5 +1,5 @@
 type Program
-  fun static main()
+  fun main()
     let n1 = 57
     var n2 = 82
     var s1 = "Hi"

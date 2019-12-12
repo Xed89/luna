@@ -62,14 +62,12 @@ namespace LunaCompiler
 
   class FunctionSyntax : SyntaxNode
   {
-    public readonly bool isStatic;
     public readonly Token nameToken;
     public readonly List<FunctionArgSyntax> argumentSyntaxes;
     public readonly TypeSyntax typeSyntax;
     public readonly List<StatementSyntax> statementSyntaxes;
-    public FunctionSyntax(bool isStatic, Token identifierToken, List<FunctionArgSyntax> argumentSyntaxes, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
+    public FunctionSyntax(Token identifierToken, List<FunctionArgSyntax> argumentSyntaxes, TypeSyntax typeSyntax, List<StatementSyntax> statementSyntaxes)
     {
-      this.isStatic = isStatic;
       this.nameToken = identifierToken;
       this.argumentSyntaxes = argumentSyntaxes;
       this.typeSyntax = typeSyntax;
@@ -78,8 +76,7 @@ namespace LunaCompiler
 
     public override void WriteTree(IndentedTextWriter writer)
     {
-      var staticKeyword = isStatic ? " (static)" : "";
-      writer.WriteLine($"Function '{nameToken.value}'{staticKeyword}");
+      writer.WriteLine($"Function '{nameToken.value}'");
       writer.Indent += 1;
 
       if (argumentSyntaxes.Count > 0)
