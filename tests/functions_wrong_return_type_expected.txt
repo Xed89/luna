@@ -15,7 +15,25 @@ TypeDeclaration 'Program'
           ReturnStatementSyntax
             value:
               ExpressionLiteralSyntax '7'
+  [2]: 
+    Function 'getNumber2'
+      type:
+        Type 'int'
+      statements:
+        [0]: 
+          ReturnStatementSyntax
+  [3]: 
+    Function 'doWork'
+      type:
+        null
+      statements:
+        [0]: 
+          ReturnStatementSyntax
+            value:
+              ExpressionLiteralSyntax '7'
 
 Compile failed:
 Function must return a value of type int, not string
+Function must return a value of type int
+Function must not return a value
 

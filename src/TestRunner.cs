@@ -117,17 +117,14 @@ namespace LunaCompiler
 
         watch.Start();
         var compiler = new Compiler(syntaxTree);
-        Module module;
-        CompilerException compilerException;
+        CompileResult compileResult;
         try
         {
-          module = compiler.Compile();
-          compilerException = null;
+          compileResult = compiler.Compile();
         }
         catch (CompilerException ex)
         {
-          compilerException = ex;
-          module = null;
+          compileResult = new CompileResult(false, null, new List<CompilerException>() {ex});
         }
         watch.Stop();
         times.compileTimeMicrosec = watch.DurationMicrosec;
@@ -137,25 +134,27 @@ namespace LunaCompiler
         {
           using (var writer = new IndentedTextWriter(sw, "  "))
           {
-            if (compilerException != null)
+            if (!compileResult.Succeeded)
             {
               writer.WriteLine("Compile failed:");
-              foreach (var l in compilerException.Message.Split(Environment.NewLine))
-              {
-                writer.WriteLine(l);
+              foreach (var compilerException in compileResult.Errors) {
+                foreach (var l in compilerException.Message.Split(Environment.NewLine))
+                {
+                  writer.WriteLine(l);
+                }
               }
               writer.WriteLine("");
             }
             else
             {
               writer.WriteLine("Compiled module:");
-              module.Write(writer);
+              compileResult.Module.Write(writer);
               writer.WriteLine("");
             }
           }
         }
 
-        if (compilerException != null)
+        if (!compileResult.Succeeded)
         {
           return;
         }
@@ -166,7 +165,7 @@ namespace LunaCompiler
         {
           using (var writer = new IndentedTextWriter(sw, "  "))
           {
-            var gen = new CppCodeGenerator(module, writer);
+            var gen = new CppCodeGenerator(compileResult.Module, writer);
             gen.Generate();
             cppCode = sw.ToString();
           }

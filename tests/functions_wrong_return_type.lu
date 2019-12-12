@@ -3,3 +3,9 @@ type Program
 
   fun getNumber(): int 
     return "7"
+
+  fun getNumber2(): int 
+    return
+
+  fun doWork()
+    return "7"

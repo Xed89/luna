@@ -4,6 +4,18 @@ using System.Collections.Generic;
 
 namespace LunaCompiler
 {
+  class CompileResult
+  {
+    public readonly bool Succeeded;
+    public readonly Module Module;
+    public readonly List<CompilerException> Errors;
+    public CompileResult(bool Succeeded, Module Module, List<CompilerException> Errors) {
+      this.Succeeded = Succeeded;
+      this.Module = Module;
+      this.Errors = Errors;
+    }
+  }
+
   class Compiler
   {
     public readonly SyntaxTree syntaxTree;
@@ -15,8 +27,9 @@ namespace LunaCompiler
     private TypeResolver typeResolver;
     private Dictionary<Function, FunctionSyntax> functionToSyntax;
 
-    public Module Compile()
+    public CompileResult Compile()
     {
+      var errors = new List<CompilerException>();
       var types = new List<Type>();
       functionToSyntax = new Dictionary<Function, FunctionSyntax>();
       typeResolver = new TypeResolver();
@@ -29,7 +42,7 @@ namespace LunaCompiler
         }
         else
         {
-          throw new CompilerException($"Unexpected syntax {node.GetType().Name}");
+          errors.Add(new CompilerException($"Unexpected syntax {node.GetType().Name}"));
         }
       }
 
@@ -38,12 +51,14 @@ namespace LunaCompiler
       {
         foreach(var function in type.functions)
         {
-          var functionBodyCompiler = new FunctionBodyCompiler(function, functionToSyntax[function], typeResolver);
+          var functionBodyCompiler = new FunctionBodyCompiler(function, functionToSyntax[function], typeResolver, errors);
           functionBodyCompiler.Compile();
         }
       }
 
-      return new Module(syntaxTree.moduleName, types);
+      return new CompileResult(Succeeded: errors.Count == 0, 
+                               Module: new Module(syntaxTree.moduleName, types), 
+                               Errors: errors);
     }
 
     private Type CompileType(TypeDeclarationSyntax typeDeclaration)

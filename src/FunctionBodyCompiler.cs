@@ -9,12 +9,14 @@ namespace LunaCompiler
     private readonly Function function;
     private readonly FunctionSyntax functionSyntax;
     private readonly TypeResolver typeResolver;
+    private readonly List<CompilerException> errors;
     private List<DeclarationStatement> localVariables;
-    public FunctionBodyCompiler(Function function, FunctionSyntax functionSyntax, TypeResolver typeResolver)
+    public FunctionBodyCompiler(Function function, FunctionSyntax functionSyntax, TypeResolver typeResolver, List<CompilerException> errors)
     {
       this.function = function;
       this.functionSyntax = functionSyntax;
       this.typeResolver = typeResolver;
+      this.errors = errors;
       localVariables = new List<DeclarationStatement>();
     }
 
@@ -22,21 +24,25 @@ namespace LunaCompiler
     {
       foreach (var statementSyntax in functionSyntax.statementSyntaxes)
       {
-        if (statementSyntax.GetType() == typeof(VarOrCallChainMaybeAssignStatementSyntax))
-        {
-          CompileFunctionStatement_VarOrCallChainMaybeAssignStatement((VarOrCallChainMaybeAssignStatementSyntax)statementSyntax, function.statements);
-        }
-        else if (statementSyntax.GetType() == typeof(DeclarationStatementSyntax))
-        {
-          CompileFunctionStatement_DeclarationStatement((DeclarationStatementSyntax)statementSyntax, function.statements);
-        }
-        else if (statementSyntax.GetType() == typeof(ReturnStatementSyntax))
-        {
-          CompileFunctionStatement_ReturnStatement((ReturnStatementSyntax)statementSyntax, function.statements);
-        }
-        else
-        {
-          throw new CompilerException($"Unknown statement type: {statementSyntax.GetType().Name}");
+        try {
+          if (statementSyntax.GetType() == typeof(VarOrCallChainMaybeAssignStatementSyntax))
+          {
+            CompileFunctionStatement_VarOrCallChainMaybeAssignStatement((VarOrCallChainMaybeAssignStatementSyntax)statementSyntax, function.statements);
+          }
+          else if (statementSyntax.GetType() == typeof(DeclarationStatementSyntax))
+          {
+            CompileFunctionStatement_DeclarationStatement((DeclarationStatementSyntax)statementSyntax, function.statements);
+          }
+          else if (statementSyntax.GetType() == typeof(ReturnStatementSyntax))
+          {
+            CompileFunctionStatement_ReturnStatement((ReturnStatementSyntax)statementSyntax, function.statements);
+          }
+          else
+          {
+            throw new CompilerException($"Unknown statement type: {statementSyntax.GetType().Name}");
+          }
+        } catch (CompilerException ex) {
+          errors.Add(ex);
         }
       }
     }
@@ -175,8 +181,16 @@ namespace LunaCompiler
         value = CompileExpression(returnStatement.value);
         if (value.Type != function.returnType) 
         {
-          throw new CompilerException($"Function must return a value of type {function.returnType.name}, not {value.Type.name}");
+          if (function.returnType == null)
+            throw new CompilerException($"Function must not return a value");
+          else
+            throw new CompilerException($"Function must return a value of type {function.returnType.name}, not {value.Type.name}");
         }
+      } 
+      else
+      {
+        if (function.returnType != null)
+          throw new CompilerException($"Function must return a value of type {function.returnType.name}");
       }
 
       statements.Add(new ReturnStatement(value));
@@ -209,7 +223,7 @@ namespace LunaCompiler
       }
       else
       {
-        throw new ArgumentException($"Could not determine type of expression");
+        throw new CompilerException($"Could not determine type of expression");
       }
     }
 
