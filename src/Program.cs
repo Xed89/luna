@@ -11,8 +11,13 @@ namespace LunaCompiler {
 
       if (args[0] == "-runtests")
       {
+        var testFilter = "";
+        if (args.Length > 1) 
+        {
+          testFilter = args[1];
+        }
         var testsPath = System.IO.Path.Combine(System.Environment.CurrentDirectory, "tests");
-        var runner = new TestRunner(testsPath);
+        var runner = new TestRunner(testsPath, testFilter);
         runner.RunTests();
         return;
       }

@@ -1,0 +1,5 @@
+type Program
+  fun main()
+
+  fun getNumber(): int 
+    return "7"

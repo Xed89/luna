@@ -150,7 +150,11 @@ namespace LunaCompiler
     {
       IExpression value = CompileExpression(returnStatement.value);
       
-      // TODO Check value type agains this function return type
+      if (value.Type != function.returnType) 
+      {
+        throw new CompilerException($"Function must return a value of type {function.returnType.name}, not {value.Type.name}");
+      }
+
       statements.Add(new ReturnStatement(value));
     }
 

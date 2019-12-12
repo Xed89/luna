@@ -1,0 +1,21 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main'
+      type:
+        null
+      statements:
+  [1]: 
+    Function 'getNumber'
+      type:
+        Type 'int'
+      statements:
+        [0]: 
+          ReturnStatementSyntax
+            value:
+              ExpressionLiteralSyntax '7'
+
+Compile failed:
+Function must return a value of type int, not string
+

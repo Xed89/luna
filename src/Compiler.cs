@@ -62,31 +62,6 @@ namespace LunaCompiler
       return type;
     }
 
-    // Current scope data
-    private List<DeclarationStatement> localVariables;
-    private ISymbol FindIdentifier(Token identifier)
-    {
-      var result = FindIdentifierOrNull(identifier);
-      if (result != null)
-        return result;
-
-      throw new CompilerException($"Could not find identifier {identifier.value}", identifier);
-    }
-
-    private ISymbol FindIdentifierOrNull(Token identifier)
-    {
-      // token is an identifier
-      foreach (var lv in localVariables)
-      {
-        if (lv.name == identifier.value)
-        {
-          return lv;
-        }
-      }
-
-      return null;
-    }
-
     private Function CompileFunctionDeclaration(Type type, FunctionSyntax functionSyntax)
     {
       Type returnType = null;

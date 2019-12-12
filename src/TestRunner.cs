@@ -10,9 +10,11 @@ namespace LunaCompiler
   class TestRunner
   {
     private readonly string path;
-    public TestRunner(string path)
+    private readonly string filter;
+    public TestRunner(string path, string filter)
     {
       this.path = path;
+      this.filter = filter;
     }
 
     private struct TestTimes
@@ -258,7 +260,7 @@ namespace LunaCompiler
 
     private IEnumerable<String> CollectTestSourceFiles()
     {
-      return System.IO.Directory.EnumerateFiles(path, "*.lu");
+      return System.IO.Directory.EnumerateFiles(path, filter + "*.lu");
     }
 
     private bool AreFilesEqual(String fileExpected, String fileActual)
