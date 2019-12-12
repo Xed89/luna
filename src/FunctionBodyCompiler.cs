@@ -53,22 +53,12 @@ namespace LunaCompiler
     private ISymbol FindIdentifierOrNull(Token identifier)
     {
       // Try local variables
-      foreach (var lv in localVariables)
-      {
-        if (lv.name == identifier.value)
-        {
-          return lv;
-        }
-      }
+      var x = FindLocalVariableOrNull(identifier.value);
+      if (x != null) return x;
 
       // Try function arguments
-      foreach (var arg in function.arguments)
-      {
-        if (arg.name == identifier.value)
-        {
-          return arg;
-        }
-      }
+      var y = FindFunctionArgumentOrNull(identifier.value);
+      if (y != null) return y;
 
       // Try functions in the same type of the function being compiled 
       // TODO Test recursive call: it could also be the function being compiled
@@ -81,6 +71,32 @@ namespace LunaCompiler
       }
 
       return null;
+    }
+
+    private ISymbol FindLocalVariableOrNull(string name)
+    {
+      foreach (var lv in localVariables)
+      {
+        if (lv.name == name)
+        {
+          return lv;
+        }
+      }
+      return null;
+    }
+    private ISymbol FindFunctionArgumentOrNull(string name)
+    {
+      foreach (var arg in function.arguments)
+      {
+        if (arg.name == name)
+        {
+          return arg;
+        }
+      }
+      return null;
+    }
+    private bool LocalVariableOrFunctionArgumentExists(string name) {
+      return FindLocalVariableOrNull(name) != null || FindFunctionArgumentOrNull(name) != null;
     }
 
     enum VarOrCallChainCompileState
@@ -136,11 +152,15 @@ namespace LunaCompiler
         throw new ArgumentException("Could not determine type for variable");
       }
 
-      // TODO Check duplicate variables
+      var identifierName = declarationStatement.identifierToken.value;
+      if (LocalVariableOrFunctionArgumentExists(identifierName)) 
+      {
+        throw new CompilerException($"Variable with name {identifierName} already declared");
+      }
 
       var ds = new DeclarationStatement(declarationStatement.isVar,
                                         type,
-                                        declarationStatement.identifierToken.value,
+                                        identifierName,
                                         initializer);
       localVariables.Add(ds);
       statements.Add(ds);

@@ -1,0 +1,4 @@
+type Program
+  fun main()
+    let n1 = 57
+    let n1 = 14

@@ -1,0 +1,20 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main'
+      type:
+        null
+      statements:
+        [0]: 
+          DeclarationStatementSyntax
+            let n1
+              ExpressionLiteralSyntax '57'
+        [1]: 
+          DeclarationStatementSyntax
+            let n1
+              ExpressionLiteralSyntax '14'
+
+Compile failed:
+Variable with name n1 already declared
+
