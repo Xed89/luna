@@ -105,6 +105,7 @@ namespace LunaCompiler
           break;
         }
       }
+      NestingLevelDecrease();
 
       return new TypeDeclarationSyntax(nameToken, functions);
     }

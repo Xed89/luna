@@ -13,7 +13,7 @@ topLevelSyntax := variableDeclaration | functionDeclaration
 
 variableDeclaration := 'var' identifier ['=' expression] newline
 
-functionDeclaration := 'fun' ['static'] identifier '(' ')' [':' type] newline {statement}
+functionDeclaration := 'fun' identifier '(' ')' [':' type] newline {statement}
 
 statement := declarationStatement | varOrCallChainMaybeAssignStatement
 declarationStatement := ('let' | 'var') identifier [':' type] ['=' expression]

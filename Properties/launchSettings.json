@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "LunaCompiler": {
+      "commandName": "Project",
+      "commandLineArgs": "-runtests",
+      "workingDirectory": "C:\\Dati\\bitLab\\Progetti\\luna"
+    }
+  }
+}

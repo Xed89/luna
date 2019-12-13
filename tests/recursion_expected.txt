@@ -1,0 +1,233 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main'
+      type:
+        null
+      statements:
+        [0]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'printUpToN'
+                  [0]: 
+                    ExpressionLiteralSyntax '3'
+                  [1]: 
+                    ExpressionLiteralSyntax '12'
+        [1]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionLiteralSyntax '%i'
+                  [1]: 
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'fib'
+                          [0]: 
+                            ExpressionLiteralSyntax '13'
+  [1]: 
+    Function 'printUpToN'
+      arguments:
+          [0]: 
+            FunctionArg 'curr'
+              type:
+                Type 'int'
+          [1]: 
+            FunctionArg 'N'
+              type:
+                Type 'int'
+      type:
+        null
+      statements:
+        [0]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionLiteralSyntax '%i'
+                  [1]: 
+                    VarOrCallChainSyntax
+                      [0]: 
+                        VariableOrCall 'curr'
+        [1]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '<'
+                left: 
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'curr'
+                right: 
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'N'
+            true branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'printUpToN'
+                        [0]: 
+                          ExpressionBinOpSyntax
+                            Op: '+'
+                            left: 
+                              VarOrCallChainSyntax
+                                [0]: 
+                                  VariableOrCall 'curr'
+                            right: 
+                              ExpressionLiteralSyntax '1'
+                        [1]: 
+                          VarOrCallChainSyntax
+                            [0]: 
+                              VariableOrCall 'N'
+  [2]: 
+    Function 'fib'
+      arguments:
+          [0]: 
+            FunctionArg 'n'
+              type:
+                Type 'int'
+      type:
+        Type 'int'
+      statements:
+        [0]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '<'
+                left: 
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'n'
+                right: 
+                  ExpressionLiteralSyntax '2'
+            true branch statements:
+              [0]: 
+                ReturnStatementSyntax
+                  value:
+                    ExpressionLiteralSyntax '1'
+            false branch statements:
+              [0]: 
+                IfStatementSyntax
+                  condition:
+                    ExpressionBinOpSyntax
+                      Op: '<'
+                      left: 
+                        VarOrCallChainSyntax
+                          [0]: 
+                            VariableOrCall 'n'
+                      right: 
+                        ExpressionLiteralSyntax '3'
+                  true branch statements:
+                    [0]: 
+                      ReturnStatementSyntax
+                        value:
+                          ExpressionLiteralSyntax '2'
+                  false branch statements:
+                    [0]: 
+                      ReturnStatementSyntax
+                        value:
+                          ExpressionBinOpSyntax
+                            Op: '+'
+                            left: 
+                              VarOrCallChainSyntax
+                                [0]: 
+                                  VariableOrCall 'fib'
+                                    [0]: 
+                                      ExpressionBinOpSyntax
+                                        Op: '-'
+                                        left: 
+                                          VarOrCallChainSyntax
+                                            [0]: 
+                                              VariableOrCall 'n'
+                                        right: 
+                                          ExpressionLiteralSyntax '2'
+                            right: 
+                              VarOrCallChainSyntax
+                                [0]: 
+                                  VariableOrCall 'fib'
+                                    [0]: 
+                                      ExpressionBinOpSyntax
+                                        Op: '-'
+                                        left: 
+                                          VarOrCallChainSyntax
+                                            [0]: 
+                                              VariableOrCall 'n'
+                                        right: 
+                                          ExpressionLiteralSyntax '1'
+
+Compiled module:
+Module recursion
+  Type Program
+    Function main()
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
+    Function printUpToN(curr: int, N: int)
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
+      LunaCompiler.IfStatement
+    Function fib(n: int): int
+      LunaCompiler.IfStatement
+
+Generated Cpp code:
+#include "stdio.h"
+#include "stdarg.h"
+class Console {
+public:
+  static void writeLine(const char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vfprintf(stdout, msg, argp);
+    fprintf(stdout, "\n");
+    va_end(argp);
+  }
+};
+
+class Program {
+public:
+  static void main() {
+    Program::printUpToN(3, 12);
+    Console::writeLine("%i", Program::fib(13));
+  }
+  static void printUpToN(int curr, int N) {
+    Console::writeLine("%i", curr);
+    if (curr < N) {
+      Program::printUpToN(curr + 1, N);
+    }
+  }
+  static int fib(int n) {
+    if (n < 2) {
+      return 1;
+    } else {
+      if (n < 3) {
+        return 2;
+      } else {
+        return Program::fib(n - 2) + Program::fib(n - 1);
+      }
+    }
+  }
+};
+int main() {
+  Program::main();
+}
+
+Program output:
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+377

@@ -1,0 +1,7 @@
+type Program1
+  fun main()
+    Console.writeLine("Hello World!")
+
+type Program2
+  fun main()
+    Console.writeLine("Hello World!")

@@ -1,0 +1,18 @@
+type Program
+  fun main()
+    printUpToN(3, 12)
+    Console.writeLine("%i", fib(13))
+
+  fun printUpToN(curr: int, N: int)
+    Console.writeLine("%i", curr)
+    if curr < N
+      printUpToN(curr+1, N)
+
+  fun fib(n: int): int
+    if n < 2
+      return 1
+    else
+      if n < 3
+        return 2
+      else
+        return fib(n-2) + fib(n-1)

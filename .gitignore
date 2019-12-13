@@ -2,3 +2,4 @@
 /obj
 /tests/tmpCompile
 /tests/*_actual.txt
+/.vs

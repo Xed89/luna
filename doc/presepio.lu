@@ -1,0 +1,93 @@
+require mbed
+
+-- User-defined type for milliseconds, with ms suffix
+type millisec64
+  @Luna.UnitType(baseType: "int64", 
+                 suffix:   "ms")
+
+type Presepio
+  new()
+    -- Declare and initialize type members
+    -- Every let/var in the constructor becomes a member of the type
+
+    let pc = new Serial(PinName.USBTX,
+                        PinName.USBRX)
+    let sd = new SDFileSystem(mosi: PinName.PC_12, 
+                              miso: PinName.PC_11,
+                              sclk: PinName.PC_10,
+                              cs:   PinName.PD_2,
+                              name: "sd")
+    let ticker = new Ticker()
+    var tick_received = false
+    -- ms is the type suffix for the user defined type 'millisec64'
+    var tick_count = 0ms
+    var currTime = 0ms
+
+    let relay_board = new RelayBoard()
+    let triac_board = new TriacBoard()
+
+    let storyboard = new Storyboard()
+    let storyboardPlayer = new StoryboardPlayer(storyboard, relay_board, triac_board)
+
+  fun init()
+    pc.baud(115200)
+
+    ticker.attach(tick, 1.0 / TICKS_PER_SECOND)
+
+    pc.printf("===== Presepe =====\n")
+    pc.printf("   version: 0.1a   \n")
+    pc.printf("===================\n")
+    pc.printf("Used heap: {Os.getUsedHeap()} bytes\n")
+
+    pc.printf("Mounting SD........")
+    let sdErrCode = sd.disk_initialize()
+    pc.printf(if(sdErrCode = 0) "[OK]\n" else "[ERR]\n")
+
+    storyboardPlayer.init()
+
+
+  fun mainLoop()
+    let printDebug = false;
+
+    storyboardPlayer.mainLoop()
+
+    if pc.readable()
+      let BUFFER_SIZE: int = 48;
+      let readBuffer[BUFFER_SIZE] = {0};
+
+      pc.gets(readBuffer, BUFFER_SIZE - 1)
+      --pc.printf("Received <%s> with %i chars\n", readBuffer, strlen(readBuffer));
+      if strcmp(readBuffer, "play\n") = 0
+        storyboardPlayer.play()
+        pc.printf("Playing...\n")
+
+      else if strcmp(readBuffer, "pause\n") = 0
+        storyboardPlayer.pause()
+        pc.printf("Paused\n")
+
+      else if strcmp(readBuffer, "stop\n") = 0
+        storyboardPlayer.stop()
+        pc.printf("Stopped\n")
+
+    if tick_received
+      tick_received = false
+
+      if printDebug
+        if currTime % 500 = 0
+          triac_board.debugPrintOutputs()
+
+      if lastInput50HzIsStable != triac_board.getInput50HzIsStable()
+        lastInput50HzIsStable = triac_board.getInput50HzIsStable()
+        let stableString = lastInput50HzIsStable ? "detected" : "lost";
+        pc.printf("sys: Input 50Hz {stableString}, measured: {triac_board.getMeasured50HzFrequency():.1} Hz\r\n")
+
+
+  fun tick()
+    tick_received = true
+    tick_count += 1ms
+
+    let prevCurrTime = currTime
+    currTime = 1000 * tick_count / TICKS_PER_SECOND
+
+    -- Send only the delta, so storyboardPlayer can keep its time with just a sum
+    storyboardPlayer.tick(currTime - prevCurrTime)
