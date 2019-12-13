@@ -14,13 +14,15 @@ namespace LunaCompiler
       this.tokenizer = tokenizer;
     }
 
-    private Token nextToken;
     private Token token;
+    private Token nextToken;
+    private Token nextToken2;
     private int nestingDepth;
     private void NextToken()
     {
       token = nextToken;
-      nextToken = tokenizer.GetNextTokenOrNull();
+      nextToken = nextToken2;
+      nextToken2 = tokenizer.GetNextTokenOrNull();
     }
     private bool HasNextToken()
     {
@@ -49,6 +51,7 @@ namespace LunaCompiler
 
       token = null;
       nextToken = null;
+      nextToken2 = tokenizer.GetNextTokenOrNull();
       nestingDepth = 0;
       NextToken();
 
@@ -136,19 +139,7 @@ namespace LunaCompiler
       }
       Expect(TokenType.NewLine);
 
-      NestingLevelIncrease();
-      var statements = new List<StatementSyntax>();
-      // Now we have the function statements!
-      while (AcceptIndentation(nestingDepth))
-      {
-        statements.Add(ParseStatement());
-        if (HasNextToken())
-        {
-          // All statements end with a newline, if the file is not ended
-          Expect(TokenType.NewLine);
-        }
-      }
-      NestingLevelDecrease();
+      var statements = ParseStatementBlock();
 
       return new FunctionSyntax(identifierToken, args, typeSyntax, statements);
     }
@@ -175,6 +166,10 @@ namespace LunaCompiler
       {
         return ParseReturnStatement();
       }
+      else if (AcceptKeyword("if"))
+      {
+        return ParseIfStatement();
+      }
       else
       {
         return ParseVarOrCallChainMaybeAssignStatement();
@@ -191,6 +186,7 @@ namespace LunaCompiler
       {
         valueToAssignExpression = ParseExpression();
       }
+      ExpectIfNotEnded(TokenType.NewLine);
 
       return new VarOrCallChainMaybeAssignStatementSyntax(varOrCallChain, valueToAssignExpression);
     }
@@ -204,13 +200,67 @@ namespace LunaCompiler
       {
         initializer = ParseExpression();
       }
+      ExpectIfNotEnded(TokenType.NewLine);
       return new DeclarationStatementSyntax(isVar, identifierToken, initializer);
     }
 
     private ReturnStatementSyntax ParseReturnStatement()
     {
       var value = ParseExpression(acceptEmpty: true);
+      ExpectIfNotEnded(TokenType.NewLine);
       return new ReturnStatementSyntax(value);
+    }
+
+    private IfStatementSyntax ParseIfStatement()
+    {
+      var condition = ParseExpression();
+      Expect(TokenType.NewLine);
+
+      var trueBranchStatements = ParseStatementBlock();
+
+      List<StatementSyntax> falseBranchStatements = null;
+      // TODO Allow empty lines or with correct nesting depth between the if block and the else keyword
+      if (AcceptIndentationAndKeyword(nestingDepth, "else"))
+      {
+        Expect(TokenType.NewLine);
+        falseBranchStatements = ParseStatementBlock();
+      }
+
+      if (falseBranchStatements == null)
+        falseBranchStatements = new List<StatementSyntax>();
+
+      return new IfStatementSyntax(condition, trueBranchStatements, falseBranchStatements);
+    }
+
+    private List<StatementSyntax> ParseStatementBlock()
+    {
+      NestingLevelIncrease();
+      var statements = new List<StatementSyntax>();
+      // Now we have the function statements!
+      while (true)
+      {
+        if (Accept(TokenType.NewLine))
+        {
+          // Allow empty lines without indentation
+        }
+        else if (AcceptIndentation(nestingDepth))
+        {
+          if (Accept(TokenType.NewLine))
+          {
+            // An empty line correctly indented, it's ok.
+          }
+          else
+          {
+            statements.Add(ParseStatement());
+          }
+        }
+        else
+        {
+          break;
+        }
+      }
+      NestingLevelDecrease();
+      return statements;
     }
 
     private VarOrCallChainSyntax ParseVarOrCallChain()
@@ -251,13 +301,41 @@ namespace LunaCompiler
 
     private IExpressionSyntax ParseExpression(bool acceptEmpty = false)
     {
-      var facts = new List<IExpressionSyntax>();
+      var expressions = new List<IExpressionSyntax>();
       var ops = new List<Token>();
       while (true)
       {
-        if (facts.Count > 0)
+        if (expressions.Count > 0)
         {
-          // It's not the first, so to continue the fact chain we need to find a + or -
+          if (Accept(TokenType.SmallerThan))
+            ops.Add(Current());
+          else if (Accept(TokenType.GreaterThan))
+            ops.Add(Current());
+          else
+            break;
+        }
+
+        var expr = ParseExpression_PlusMinus(acceptEmpty);
+        if (expr == null)
+        {
+          if (!acceptEmpty)
+            throw new CompilerException("No factor found is valid only when empty expression is accepted");
+          return null;
+        }
+        expressions.Add(expr);
+      }
+
+      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(expressions, ops);
+    }
+
+    private IExpressionSyntax ParseExpression_PlusMinus(bool acceptEmpty = false)
+    {
+      var expressions = new List<IExpressionSyntax>();
+      var ops = new List<Token>();
+      while (true)
+      {
+        if (expressions.Count > 0)
+        {
           if (Accept(TokenType.Plus))
             ops.Add(Current());
           else if (Accept(TokenType.Minus))
@@ -266,28 +344,27 @@ namespace LunaCompiler
             break;
         }
 
-        var fact = ParseExpressionFacts(acceptEmpty);
-        if (fact == null) 
+        var expr = ParseExpression_AsteriskSlash(acceptEmpty);
+        if (expr == null)
         {
           if (!acceptEmpty)
             throw new CompilerException("No factor found is valid only when empty expression is accepted");
           return null;
         }
-        facts.Add(fact);
+        expressions.Add(expr);
       }
 
-      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(facts, ops);
+      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(expressions, ops);
     }
 
-    private IExpressionSyntax ParseExpressionFacts(bool acceptEmpty)
+    private IExpressionSyntax ParseExpression_AsteriskSlash(bool acceptEmpty)
     {
-      var terminals = new List<IExpressionSyntax>();
+      var expressions = new List<IExpressionSyntax>();
       var ops = new List<Token>();
       while (true)
       {
-        if (terminals.Count > 0)
+        if (expressions.Count > 0)
         {
-          // It's not the first, so to continue the fact chain we need to find a * or /
           if (Accept(TokenType.Asterisk))
             ops.Add(Current());
           else if (Accept(TokenType.Slash))
@@ -297,19 +374,19 @@ namespace LunaCompiler
         }
 
         var expr = ParseExpressionTerminalsOrNull();
-        if (expr == null) 
+        if (expr == null)
         {
           // If no terminal was alread matched and the caller allows for no expression
           // then return null to signal no expression found
-          if (terminals.Count == 0 && acceptEmpty)
+          if (expressions.Count == 0 && acceptEmpty)
             return null;
           else
             throw CreateException("Expression expected");
         }
-        terminals.Add(expr);
+        expressions.Add(expr);
       }
 
-      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(terminals, ops);
+      return BuildBinOpSamePrecedenceExprTree_LeftAssociative(expressions, ops);
     }
 
     private IExpressionSyntax BuildBinOpSamePrecedenceExprTree_LeftAssociative(List<IExpressionSyntax> exprs, List<Token> ops)
@@ -376,6 +453,18 @@ namespace LunaCompiler
     {
       return Accept(TokenType.Indentation, new String(' ', 2 * nestingDepth));
     }
+    private bool AcceptIndentationAndKeyword(int nestingDepth, String value)
+    {
+      if (Peek(TokenType.Indentation, new String(' ', 2 * nestingDepth)) &&
+          Peek2(TokenType.Keyword, value))
+      {
+        NextToken();
+        NextToken();
+        return true;
+      }
+
+      return false;
+    }
 
     private bool AcceptKeyword(String value)
     {
@@ -400,8 +489,17 @@ namespace LunaCompiler
 
       return true;
     }
+    private bool Peek2(TokenType tokenType, String value = null)
+    {
+      if ((nextToken2 == null) || (nextToken2.type != tokenType) || (value != null && nextToken2.value != value))
+      {
+        return false;
+      }
 
-    private bool Expect(TokenType tokenType)
+      return true;
+    }
+
+    private void Expect(TokenType tokenType)
     {
       if ((nextToken == null) || (nextToken.type != tokenType))
       {
@@ -409,7 +507,11 @@ namespace LunaCompiler
       }
 
       NextToken();
-      return true;
+    }
+    private void ExpectIfNotEnded(TokenType tokenType)
+    {
+      if (HasNextToken())
+        Expect(tokenType);
     }
 
     private CompilerException CreateException(string msg)

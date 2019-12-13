@@ -6,11 +6,13 @@ namespace LunaCompiler
 {
   class TypeResolver
   {
+    public readonly Type boolType;
     private readonly Type stringType;
     private readonly Type intType;
     private readonly Type ConsoleType;
     public TypeResolver()
     {
+      boolType = new Type("bool");
       stringType = new Type("string");
       intType = new Type("int");
       ConsoleType = new Type("Console");
@@ -38,6 +40,7 @@ namespace LunaCompiler
       {
         case "int": return intType;
         case "string": return stringType;
+        case "bool": return boolType;
         case "Console": return ConsoleType;
       }
 

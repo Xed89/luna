@@ -1,0 +1,193 @@
+Parsing completed
+Syntax Tree:
+TypeDeclaration 'Program'
+  [0]: 
+    Function 'main'
+      type:
+        null
+      statements:
+        [0]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '<'
+                left: 
+                  ExpressionLiteralSyntax '1'
+                right: 
+                  ExpressionLiteralSyntax '3'
+            true branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'true branch 1'
+            false branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'false branch 1'
+        [1]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '>'
+                left: 
+                  ExpressionLiteralSyntax '1'
+                right: 
+                  ExpressionLiteralSyntax '3'
+            true branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'true branch 2'
+            false branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'false branch 2'
+        [2]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '<'
+                left: 
+                  ExpressionLiteralSyntax '1'
+                right: 
+                  ExpressionLiteralSyntax '3'
+            true branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'true branch 3'
+        [3]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '<'
+                left: 
+                  ExpressionLiteralSyntax '1'
+                right: 
+                  ExpressionLiteralSyntax '3'
+            true branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'true branch 4'
+        [4]: 
+          IfStatementSyntax
+            condition:
+              ExpressionBinOpSyntax
+                Op: '>'
+                left: 
+                  ExpressionLiteralSyntax '1'
+                right: 
+                  ExpressionLiteralSyntax '3'
+            true branch statements:
+              [0]: 
+                VarOrCallChainMaybeAssignStatementSyntax
+                  VarOrCallChainSyntax
+                    [0]: 
+                      VariableOrCall 'Console'
+                    [1]: 
+                      VariableOrCall 'writeLine'
+                        [0]: 
+                          ExpressionLiteralSyntax 'true branch 5'
+        [5]: 
+          VarOrCallChainMaybeAssignStatementSyntax
+            VarOrCallChainSyntax
+              [0]: 
+                VariableOrCall 'Console'
+              [1]: 
+                VariableOrCall 'writeLine'
+                  [0]: 
+                    ExpressionLiteralSyntax 'after if 5'
+
+Compiled module:
+Module if
+  Type Program
+    Function main()
+      LunaCompiler.IfStatement
+      LunaCompiler.IfStatement
+      LunaCompiler.IfStatement
+      LunaCompiler.IfStatement
+      LunaCompiler.IfStatement
+      LunaCompiler.VarOrCallChainMaybeAssignStatement
+
+Generated Cpp code:
+#include "stdio.h"
+#include "stdarg.h"
+class Console {
+public:
+  static void writeLine(const char* msg, ...) {
+    va_list argp;
+    va_start(argp, msg);
+    vfprintf(stdout, msg, argp);
+    fprintf(stdout, "\n");
+    va_end(argp);
+  }
+};
+
+class Program {
+public:
+  static void main() {
+    if (1 < 3) {
+      Console::writeLine("true branch 1");
+    } else {
+      Console::writeLine("false branch 1");
+    }
+    if (1 > 3) {
+      Console::writeLine("true branch 2");
+    } else {
+      Console::writeLine("false branch 2");
+    }
+    if (1 < 3) {
+      Console::writeLine("true branch 3");
+    }
+    if (1 < 3) {
+      Console::writeLine("true branch 4");
+    }
+    if (1 > 3) {
+      Console::writeLine("true branch 5");
+    }
+    Console::writeLine("after if 5");
+  }
+};
+int main() {
+  Program::main();
+}
+
+Program output:
+true branch 1
+false branch 2
+true branch 3
+true branch 4
+after if 5

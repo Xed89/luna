@@ -16,7 +16,7 @@ namespace LunaCompiler
       this.input = input;
       this.currLineTokens = new List<Token>();
       this.idxTokenCurrLine = 0;
-      keywords = new HashSet<string>() {"fun", "type", "let", "var", "return"};
+      keywords = new HashSet<string>() {"fun", "type", "let", "var", "return", "if", "else"};
     }
 
     public Token GetNextTokenOrNull()
@@ -174,6 +174,18 @@ namespace LunaCompiler
             {
               acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
               tokenType = TokenType.Slash;
+
+            }
+            else if (readChar == '<')
+            {
+              acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
+              tokenType = TokenType.SmallerThan;
+
+            }
+            else if (readChar == '>')
+            {
+              acceptChar = TokenizerInputCharAccept.AccumulateAndTokenComplete;
+              tokenType = TokenType.GreaterThan;
 
             }
             else if (readChar == '"')

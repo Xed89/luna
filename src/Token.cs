@@ -22,6 +22,8 @@ namespace LunaCompiler
     Minus,
     Asterisk,
     Slash,
+    SmallerThan,
+    GreaterThan,
   }
 
   public class Token

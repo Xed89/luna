@@ -225,6 +225,19 @@ namespace LunaCompiler
     }
   }
 
+  class IfStatement : Statement
+  {
+    public readonly IExpression condition;
+    public readonly List<Statement> trueBranchStatements;
+    public readonly List<Statement> falseBranchStatements;
+    public IfStatement(IExpression condition, List<Statement> trueBranchStatements, List<Statement> falseBranchStatements)
+    {
+      this.condition = condition;
+      this.trueBranchStatements = trueBranchStatements;
+      this.falseBranchStatements = falseBranchStatements;
+    }
+  }
+
   interface IExpression
   {
     Type Type { get; }
@@ -235,15 +248,16 @@ namespace LunaCompiler
     public readonly Token op;
     public readonly IExpression leftExpr;
     public readonly IExpression rightExpr;
-    public ExpressionBinOp(Token op, IExpression leftExpr, IExpression rightExpr)
+    public readonly Type type;
+    public ExpressionBinOp(Token op, IExpression leftExpr, IExpression rightExpr, Type type)
     {
       this.op = op;
       this.leftExpr = leftExpr;
       this.rightExpr = rightExpr;
+      this.type = type;
     }
 
-    // TODO Consider type conversions
-    public Type Type => leftExpr.Type;
+    public Type Type => type;
   }
 
   class ExpressionParenthesized : IExpression

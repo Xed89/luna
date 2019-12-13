@@ -69,7 +69,15 @@ namespace LunaCompiler
       writer.WriteLine($"{staticStr}{returnTypeStr} {function.name}({argStr}) {{");
       writer.Indent += 1;
 
-      foreach (var statement in function.statements)
+      GenerateStatements(function.statements);
+
+      writer.Indent -= 1;
+      writer.WriteLine($"}}");
+    }
+
+    private void GenerateStatements(List<Statement> statements)
+    {
+      foreach (var statement in statements)
       {
         if (statement.GetType() == typeof(VarOrCallChainMaybeAssignStatement))
         {
@@ -82,6 +90,7 @@ namespace LunaCompiler
             writer.Write($" = ");
             GenerateExpression(varOrCallChainMaybeAssignStatement.valueToAssignExpression);
           }
+          writer.WriteLine($";");
         }
         else if (statement.GetType() == typeof(DeclarationStatement))
         {
@@ -107,6 +116,7 @@ namespace LunaCompiler
             writer.Write($" = ");
             GenerateExpression(declarationStatement.initializer);
           }
+          writer.WriteLine($";");
         }
         else if (statement.GetType() == typeof(ReturnStatement))
         {
@@ -116,21 +126,38 @@ namespace LunaCompiler
           {
             writer.Write($"return ");
             GenerateExpression(returnStatement.value);
+            writer.WriteLine($";");
           } 
           else
           {
-            writer.Write($"return");
+            writer.WriteLine($"return;");
           }
+        }
+        else if (statement.GetType() == typeof(IfStatement))
+        {
+          var ifStatement = (IfStatement)statement;
+          
+          writer.Write("if (");
+          GenerateExpression(ifStatement.condition);
+          writer.WriteLine(") {");
+
+          writer.Indent += 1;
+          GenerateStatements(ifStatement.trueBranchStatements);
+          writer.Indent -= 1; 
+
+          if (ifStatement.falseBranchStatements.Count > 0) {
+            writer.WriteLine("} else {");
+            writer.Indent += 1;
+            GenerateStatements(ifStatement.falseBranchStatements);
+            writer.Indent -= 1; 
+          }
+          writer.WriteLine("}");
         }
         else
         {
           throw new ArgumentException($"Unknown statement type: {statement.GetType().Name}");
         }
-        writer.WriteLine($";");
       }
-
-      writer.Indent -= 1;
-      writer.WriteLine($"}}");
     }
 
     private void GenerateExpression(IExpression expression)

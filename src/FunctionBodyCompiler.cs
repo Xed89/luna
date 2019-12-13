@@ -22,20 +22,29 @@ namespace LunaCompiler
 
     public void Compile()
     {
-      foreach (var statementSyntax in functionSyntax.statementSyntaxes)
+      CompileStatements(functionSyntax.statementSyntaxes, function.statements);
+    }
+
+    private void CompileStatements(List<StatementSyntax> statementSyntaxes, List<Statement> statements)
+    {
+      foreach (var statementSyntax in statementSyntaxes)
       {
         try {
           if (statementSyntax.GetType() == typeof(VarOrCallChainMaybeAssignStatementSyntax))
           {
-            CompileFunctionStatement_VarOrCallChainMaybeAssignStatement((VarOrCallChainMaybeAssignStatementSyntax)statementSyntax, function.statements);
+            CompileFunctionStatement_VarOrCallChainMaybeAssignStatement((VarOrCallChainMaybeAssignStatementSyntax)statementSyntax, statements);
           }
           else if (statementSyntax.GetType() == typeof(DeclarationStatementSyntax))
           {
-            CompileFunctionStatement_DeclarationStatement((DeclarationStatementSyntax)statementSyntax, function.statements);
+            CompileFunctionStatement_DeclarationStatement((DeclarationStatementSyntax)statementSyntax, statements);
           }
           else if (statementSyntax.GetType() == typeof(ReturnStatementSyntax))
           {
-            CompileFunctionStatement_ReturnStatement((ReturnStatementSyntax)statementSyntax, function.statements);
+            CompileFunctionStatement_ReturnStatement((ReturnStatementSyntax)statementSyntax, statements);
+          }
+          else if (statementSyntax.GetType() == typeof(IfStatementSyntax))
+          {
+            CompileFunctionStatement_IfStatement((IfStatementSyntax)statementSyntax, statements);
           }
           else
           {
@@ -196,15 +205,49 @@ namespace LunaCompiler
       statements.Add(new ReturnStatement(value));
     }
 
+    private void CompileFunctionStatement_IfStatement(IfStatementSyntax ifStatement, List<Statement> statements)
+    {
+      var value = CompileExpression(ifStatement.condition);
+      if (value.Type != typeResolver.boolType) 
+      {
+        throw new CompilerException($"if condition must produce a boolean value");
+      }
+
+      var trueBranchStatements = new List<Statement>();
+      CompileStatements(ifStatement.trueBranchStatements, trueBranchStatements);
+      var falseBranchStatements = new List<Statement>();
+      CompileStatements(ifStatement.falseBranchStatements, falseBranchStatements);
+
+      statements.Add(new IfStatement(value, trueBranchStatements, falseBranchStatements));
+    }
+
     private IExpression CompileExpression(IExpressionSyntax expressionSyntax,
                                           int parentOpPrecedence = int.MaxValue)
     {
       if (expressionSyntax.GetType() == typeof(ExpressionBinOpSyntax))
       {
         var expressionBinOpSyntax = (ExpressionBinOpSyntax)expressionSyntax;
+        var left = CompileExpression(expressionBinOpSyntax.leftExpressionSyntax);
+        var right = CompileExpression(expressionBinOpSyntax.rightExpressionSyntax);
+
+        Type type;
+        switch (expressionBinOpSyntax.op.value)
+        {
+          case "<":
+          case ">":
+            type = typeResolver.boolType;
+            break;
+
+          default:
+            // TODO handle type conversions
+            type = left.Type;
+            break;
+        }
+
         return new ExpressionBinOp(expressionBinOpSyntax.op,
-                                   CompileExpression(expressionBinOpSyntax.leftExpressionSyntax),
-                                   CompileExpression(expressionBinOpSyntax.rightExpressionSyntax));
+                                   left,
+                                   right,
+                                   type);
       }
       else if (expressionSyntax.GetType() == typeof(ExpressionParenthesizedSyntax))
       {

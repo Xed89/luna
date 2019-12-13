@@ -287,6 +287,57 @@ namespace LunaCompiler
     }
   }
 
+  class IfStatementSyntax : StatementSyntax
+  {
+    public readonly IExpressionSyntax condition;
+    public readonly List<StatementSyntax> trueBranchStatements;
+    public readonly List<StatementSyntax> falseBranchStatements;
+    public IfStatementSyntax(IExpressionSyntax condition, List<StatementSyntax> trueBranchStatements, List<StatementSyntax> falseBranchStatements)
+    {
+      this.condition = condition;
+      this.trueBranchStatements = trueBranchStatements;
+      this.falseBranchStatements = falseBranchStatements;
+    }
+
+    public override void WriteTree(IndentedTextWriter writer)
+    {
+      writer.WriteLine(GetType().Name);
+      writer.Indent += 1;
+
+      writer.WriteLine($"condition:");
+      writer.Indent += 1;
+      condition.WriteTree(writer);
+      writer.Indent -= 1;
+
+      writer.WriteLine("true branch statements:");
+      for (var i = 0; i < trueBranchStatements.Count; i++)
+      {
+        writer.Indent += 1;
+        writer.WriteLine($"[{i}]: ");
+        writer.Indent += 1;
+        trueBranchStatements[i].WriteTree(writer);
+        writer.Indent -= 1;
+        writer.Indent -= 1;
+      }
+
+      if (falseBranchStatements.Count > 0)
+      {
+        writer.WriteLine("false branch statements:");
+        for (var i = 0; i < falseBranchStatements.Count; i++)
+        {
+          writer.Indent += 1;
+          writer.WriteLine($"[{i}]: ");
+          writer.Indent += 1;
+          falseBranchStatements[i].WriteTree(writer);
+          writer.Indent -= 1;
+          writer.Indent -= 1;
+        }
+      }
+
+      writer.Indent -= 1;
+    }
+  }
+
   interface IExpressionSyntax
   {
     void WriteTree(IndentedTextWriter writer);
