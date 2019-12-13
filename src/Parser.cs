@@ -223,8 +223,17 @@ namespace LunaCompiler
       // TODO Allow empty lines or with correct nesting depth between the if block and the else keyword
       if (AcceptIndentationAndKeyword(nestingDepth, "else"))
       {
-        Expect(TokenType.NewLine);
-        falseBranchStatements = ParseStatementBlock();
+        if (AcceptKeyword("if"))
+        {
+          // It's an "else if", parse the remaining like a nested if
+          var nestedIf = ParseIfStatement();
+          falseBranchStatements = new List<StatementSyntax>() { nestedIf };
+        }
+        else
+        {
+          Expect(TokenType.NewLine);
+          falseBranchStatements = ParseStatementBlock();
+        }
       }
 
       if (falseBranchStatements == null)

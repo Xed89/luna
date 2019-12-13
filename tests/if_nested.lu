@@ -1,10 +1,20 @@
 type Program
   fun main()
-    Console.writeLine("%i", getNum(1))
-    Console.writeLine("%i", getNum(2))
-    Console.writeLine("%i", getNum(42))
+    Console.writeLine("%i", getNumA(1))
+    Console.writeLine("%i", getNumA(2))
+    Console.writeLine("%i", getNumA(42))
 
-  fun getNum(n: int): int
+    Console.writeLine("%i", getNumB(1))
+    Console.writeLine("%i", getNumB(2))
+    Console.writeLine("%i", getNumB(3))
+    Console.writeLine("%i", getNumB(42))
+
+    Console.writeLine("%i", getNumC(1))
+    Console.writeLine("%i", getNumC(2))
+    Console.writeLine("%i", getNumC(3))
+    Console.writeLine("%i", getNumC(42))
+
+  fun getNumA(n: int): int
     if n < 2
       return 1
     else
@@ -12,3 +22,21 @@ type Program
         return 2
       else
         return 100
+
+  fun getNumB(n: int): int
+    if n < 2
+      return 1
+    else if n < 3
+      return 2
+    else if n < 4
+      return 3
+    else
+      return 100
+
+  fun getNumC(n: int): int
+    if n < 2
+      return 1
+    else if n < 3
+      return 2
+    
+    return 100
